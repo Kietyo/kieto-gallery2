@@ -1,6 +1,6 @@
 [versions]
 bomCompose = "2023.03.00"
-compose = "1.4.3"
+compose = "1.4.4"
 composeNavigation = "2.5.3"
 composeNavigationHilt = "1.0.0"
 composeTest = "1.4.0"
@@ -8,6 +8,7 @@ activity = "1.9.0"
 kotlin = "1.8.10"
 hilt = "2.45"
 androidGradlePlugin = "7.4.2"
+coil = "2.3.0"
 
 [libraries]
 bom-compose = { group = "androidx.compose", name = "compose-bom", version.ref = "bomCompose" }
@@ -27,6 +28,9 @@ compose-navigation-hilt = { module = "androidx.hilt:hilt-navigation-compose", ve
 
 compose-test-uiJunit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "composeTest" }
 compose-test-uiManifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "composeTest" }
+
+coil = { module = "io.coil-kt:coil", version.ref = "coil"}
+coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil"}
 
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-core = { module = "com.google.dagger:hilt-core", version.ref = "hilt" }

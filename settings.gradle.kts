@@ -1,5 +1,7 @@
+import org.gradle.api.initialization.resolve.RepositoriesMode
+
 /*
- * Copyright 2021 Marco Cattaneo
+ * Copyright 2022 Marco Cattaneo
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +16,22 @@
  * limitations under the License.
  */
 
-buildscript {
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
     }
 }
+rootProject.name = "android-compose-template"
 
-plugins {
-    alias libs.plugins.android.application apply false
-    alias libs.plugins.android.library apply false
-    alias libs.plugins.android.hilt apply false
-    alias libs.plugins.kotlin.android apply false
-}
-
-task clean(type: Delete) {
-    delete rootProject.buildDir
-}
+//include ":app"
+include(":app")
