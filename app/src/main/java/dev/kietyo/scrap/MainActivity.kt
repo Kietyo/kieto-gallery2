@@ -52,6 +52,10 @@ import dev.kietyo.scrap.compose.FolderItem
 import dev.kietyo.scrap.compose.FolderItemWithAsyncImage
 import dev.kietyo.scrap.compose.Header
 import dev.kietyo.scrap.ui.theme.AndroidComposeTemplateTheme
+import kotlin.streams.toList
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTime
+import kotlin.time.measureTimedValue
 
 private val DocumentFile.isImage: Boolean
     get() {
@@ -94,6 +98,7 @@ class MainActivity : ComponentActivity() {
 //    })
 //}
 
+@OptIn(ExperimentalTime::class)
 @RequiresApi(Build.VERSION_CODES.P)
 @Composable
 fun HelloWorldContent(contentResolver: ContentResolver) {
@@ -114,23 +119,29 @@ fun HelloWorldContent(contentResolver: ContentResolver) {
     }
 
     val computeGalleryItems = {
+        log("Computing gallery items...")
         documentFile?.let {
-            it.listFiles().asSequence().filter { it.isDirectory }
-                .map { directory ->
-                    val firstImageFileInDirectory = directory.listFiles().firstOrNull {
-                        it.isImage
-                    }
-                    if (firstImageFileInDirectory == null) {
-                        GalleryItem.Folder(directory.name!!)
-                    } else {
-                        GalleryItem.FolderWithAsyncImage(
-                            directory.name!!,
-                            ImageRequest.Builder(context)
-                                .data(firstImageFileInDirectory.uri).build()
-                        )
-                    }
-                }
-        } ?: sequenceOf()
+            val timeToProcessGalleryItems = measureTimedValue {
+                it.listFiles().toList().parallelStream().filter { it.isDirectory }
+                    .map { directory ->
+                        val firstImageFileInDirectory = directory.listFiles().firstOrNull {
+                            it.isImage
+                        }
+                        if (firstImageFileInDirectory == null) {
+                            GalleryItem.Folder(directory.name!!)
+                        } else {
+                            GalleryItem.FolderWithAsyncImage(
+                                directory.name!!,
+                                ImageRequest.Builder(context)
+                                    .data(firstImageFileInDirectory.uri).build()
+                            )
+                        }
+                    }?.toList()
+            }
+            log("Time to process all folder items: ${timeToProcessGalleryItems.duration}")
+            timeToProcessGalleryItems.value
+
+        } ?: listOf()
     }
 
     var galleryItems by remember {
@@ -141,27 +152,9 @@ fun HelloWorldContent(contentResolver: ContentResolver) {
         ActivityResultContracts.OpenDocumentTree()
     ) { uri: Uri? ->
         if (uri != null) {
+            log("Updating folder...")
             contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
             selectedFolder = uri
-            datastore.edit {
-                this.putString(PREFERENCE_SELECTED_FOLDER, uri.toString())
-            }
-
-            documentFile = DocumentFile.fromTreeUri(context, uri)
-            galleryItems = computeGalleryItems()
-        }
-    }
-
-    val scrollState = ScrollState(0)
-
-    AndroidComposeTemplateTheme {
-        Column {
-            Header(onLoaderFolderClick = {
-                openFolderLauncher.launch(null)
-            }, onContentScaleSelection = {
-                imageContentScale = it.contentScale
-            })
-
             selectedFolder?.let { uri ->
                 log("kiet here")
                 log("Selected path: $uri")
@@ -169,6 +162,11 @@ fun HelloWorldContent(contentResolver: ContentResolver) {
                 log("uri.encodedPath: ${uri.encodedPath}")
             }
 
+            datastore.edit {
+                this.putString(PREFERENCE_SELECTED_FOLDER, uri.toString())
+            }
+
+            documentFile = DocumentFile.fromTreeUri(context, uri)
             documentFile?.let { file ->
                 log(file.name)
                 log(file.type)
@@ -186,6 +184,33 @@ fun HelloWorldContent(contentResolver: ContentResolver) {
                 //                    }
             }
 
+            galleryItems = computeGalleryItems()
+        }
+    }
+
+    val scrollState = ScrollState(0)
+
+    val contentScales = listOf(
+        ContentScaleSelection("Crop", ContentScale.Crop),
+        ContentScaleSelection("Fit", ContentScale.Fit),
+        ContentScaleSelection("Fill Height", ContentScale.FillHeight),
+        ContentScaleSelection("Fill Width", ContentScale.FillWidth),
+        ContentScaleSelection("Inside", ContentScale.Inside),
+        ContentScaleSelection("Fill Bounds", ContentScale.FillBounds),
+        ContentScaleSelection("None", ContentScale.None),
+    ).sortedBy { it.text }
+
+
+    AndroidComposeTemplateTheme {
+        Column {
+            Header(
+                contentScales.first(),
+                contentScales,
+                onLoaderFolderClick = {
+                openFolderLauncher.launch(null)
+            }, onContentScaleSelection = {
+                imageContentScale = it.contentScale
+            })
             GalleryView(galleryItems, imageContentScale)
         }
 
@@ -203,7 +228,7 @@ fun log(content: Any?) {
 
 @Composable
 fun GalleryView(
-    galleryItems: Sequence<GalleryItem>,
+    galleryItems: List<GalleryItem>,
     defaultImageContentScale: ContentScale,
 ) {
     //    val scrollState = ScrollState(0)
@@ -228,15 +253,15 @@ fun GalleryView(
     }
 }
 
-@Preview
-@Composable
-fun GalleryViewPreview() {
-    GalleryView(mutableListOf<GalleryItem>().apply {
-        repeat(9) {
-            add(GalleryItem.Folder("Item $it"))
-        }
-    }.asSequence(), ContentScale.Fit)
-}
+//@Preview
+//@Composable
+//fun GalleryViewPreview() {
+//    GalleryView(mutableListOf<GalleryItem>().apply {
+//        repeat(9) {
+//            add(GalleryItem.Folder("Item $it"))
+//        }
+//    }.asSequence(), ContentScale.Fit)
+//}
 
 @Preview
 @Composable
