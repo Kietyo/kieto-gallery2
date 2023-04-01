@@ -8,8 +8,7 @@ import kotlinx.parcelize.Parcelize
 import kotlinx.parcelize.RawValue
 
 sealed class GalleryItem {
-    @Parcelize
-    data class Folder(val folderName: String) : GalleryItem(), Parcelable
+    data class Folder(val folderName: String) : GalleryItem()
 
 //    @Parcelize
 //    data class FolderWithImage(
@@ -17,11 +16,10 @@ sealed class GalleryItem {
 //        val imageSource: ImageDecoder.Source
 //    ) : GalleryItem(), Parcelable
 
-    @Parcelize
     data class FolderWithAsyncImage(
         val folderName: String,
         val imageRequest: @RawValue ImageRequest
-    ) : GalleryItem(), Parcelable
+    ) : GalleryItem()
 
     data class Image(val imageBitmap: ImageBitmap) : GalleryItem()
 }

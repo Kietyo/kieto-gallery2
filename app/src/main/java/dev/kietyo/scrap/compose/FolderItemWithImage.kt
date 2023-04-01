@@ -24,41 +24,41 @@ import androidx.core.graphics.decodeBitmap
 import coil.decode.ImageSource
 import dev.kietyo.scrap.GalleryItem
 
-@Composable
-fun FolderItemWithImage(
-    item: GalleryItem.FolderWithImage,
-    defaultImageContentScale: ContentScale,
-) {
-    val imageContentScale by remember {
-        mutableStateOf(defaultImageContentScale)
-    }
-    Box(
-        modifier = Modifier
-            .aspectRatio(1.0f)
-            .background(Color.Black)
-            .fillMaxSize()
-    ) {
-        FolderImage(item.imageSource, imageContentScale)
-        //        AsyncImage(model = ImageRequest.Builder(contex), contentDescription = "a pic")
-        Text(
-            text = item.folderName,
-            fontSize = 10.sp,
-            color = Color.White,
-            modifier = Modifier.align(Alignment.BottomStart)
-        )
-    }
-}
-
-
-@Composable
-fun FolderImage(imageSource: ImageDecoder.Source, imageContentScale: ContentScale) {
-    val imageBitmap by rememberSaveable {
-        mutableStateOf(BitmapPainter(imageSource.decodeBitmap { info, source -> }.asImageBitmap()))
-    }
-    Image(
-        imageBitmap,
-        "a picture",
-        contentScale = imageContentScale,
-        modifier = Modifier.fillMaxWidth()
-    )
-}
+//@Composable
+//fun FolderItemWithImage(
+//    item: GalleryItem.FolderWithImage,
+//    defaultImageContentScale: ContentScale,
+//) {
+//    val imageContentScale by remember {
+//        mutableStateOf(defaultImageContentScale)
+//    }
+//    Box(
+//        modifier = Modifier
+//            .aspectRatio(1.0f)
+//            .background(Color.Black)
+//            .fillMaxSize()
+//    ) {
+//        FolderImage(item.imageSource, imageContentScale)
+//        //        AsyncImage(model = ImageRequest.Builder(contex), contentDescription = "a pic")
+//        Text(
+//            text = item.folderName,
+//            fontSize = 10.sp,
+//            color = Color.White,
+//            modifier = Modifier.align(Alignment.BottomStart)
+//        )
+//    }
+//}
+//
+//
+//@Composable
+//fun FolderImage(imageSource: ImageDecoder.Source, imageContentScale: ContentScale) {
+//    val imageBitmap by rememberSaveable {
+//        mutableStateOf(BitmapPainter(imageSource.decodeBitmap { info, source -> }.asImageBitmap()))
+//    }
+//    Image(
+//        imageBitmap,
+//        "a picture",
+//        contentScale = imageContentScale,
+//        modifier = Modifier.fillMaxWidth()
+//    )
+//}

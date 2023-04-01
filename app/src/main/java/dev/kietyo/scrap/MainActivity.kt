@@ -50,7 +50,6 @@ import coil.request.ImageRequest
 import dagger.hilt.android.AndroidEntryPoint
 import dev.kietyo.scrap.compose.FolderItem
 import dev.kietyo.scrap.compose.FolderItemWithAsyncImage
-import dev.kietyo.scrap.compose.FolderItemWithImage
 import dev.kietyo.scrap.compose.Header
 import dev.kietyo.scrap.ui.theme.AndroidComposeTemplateTheme
 
@@ -85,15 +84,15 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-val CitySaver = run {
-    listSaver<GalleryItem, Any>(
-        save = {
-        this
-    },
-    restore = {
-
-    })
-}
+//val CitySaver = run {
+//    listSaver<GalleryItem, Any>(
+//        save = {
+//        this
+//    },
+//    restore = {
+//
+//    })
+//}
 
 @RequiresApi(Build.VERSION_CODES.P)
 @Composable
@@ -106,7 +105,7 @@ fun HelloWorldContent(contentResolver: ContentResolver) {
 
     log("Received saved URI: $savedUri")
 
-    var selectedFolder by rememberSaveable { mutableStateOf(savedUri?.toUri()) }
+    var selectedFolder by remember { mutableStateOf(savedUri?.toUri()) }
     var imageContentScale by remember { mutableStateOf(ContentScale.Fit) }
     var documentFile by remember {
         mutableStateOf(selectedFolder?.let {
@@ -114,8 +113,28 @@ fun HelloWorldContent(contentResolver: ContentResolver) {
         })
     }
 
-    var galleryItems by rememberSaveable {
-        mutableStateOf(sequenceOf<GalleryItem>())
+    val computeGalleryItems = {
+        documentFile?.let {
+            it.listFiles().asSequence().filter { it.isDirectory }
+                .map { directory ->
+                    val firstImageFileInDirectory = directory.listFiles().firstOrNull {
+                        it.isImage
+                    }
+                    if (firstImageFileInDirectory == null) {
+                        GalleryItem.Folder(directory.name!!)
+                    } else {
+                        GalleryItem.FolderWithAsyncImage(
+                            directory.name!!,
+                            ImageRequest.Builder(context)
+                                .data(firstImageFileInDirectory.uri).build()
+                        )
+                    }
+                }
+        } ?: sequenceOf()
+    }
+
+    var galleryItems by remember {
+        mutableStateOf(computeGalleryItems())
     }
 
     val openFolderLauncher = rememberLauncherForActivityResult(
@@ -129,34 +148,7 @@ fun HelloWorldContent(contentResolver: ContentResolver) {
             }
 
             documentFile = DocumentFile.fromTreeUri(context, uri)
-
-            documentFile?.let {
-                galleryItems =
-                    it.listFiles().asSequence().filter { it.isDirectory }
-                        .map { directory ->
-                            val firstImageFileInDirectory = directory.listFiles().firstOrNull {
-                                it.isImage
-                            }
-                            if (firstImageFileInDirectory == null) {
-                                GalleryItem.Folder(directory.name!!)
-                            } else {
-                                //                                GalleryItem.FolderWithImage(
-                                //                                    directory.name!!,
-                                //                                    ImageDecoder.createSource(
-                                //                                        contentResolver,
-                                //                                        firstImageFileInDirectory.uri
-                                //                                    )
-                                //                                )
-                                //                                val imageRequest = ImageRequest.Builder(context).data(firstImageFileInDirectory.uri).build()
-                                //                                imageLoader.enqueue(imageRequest)
-                                GalleryItem.FolderWithAsyncImage(
-                                    directory.name!!,
-                                    ImageRequest.Builder(context)
-                                        .data(firstImageFileInDirectory.uri).build()
-                                )
-                            }
-                        }
-            }
+            galleryItems = computeGalleryItems()
         }
     }
 
@@ -225,10 +217,6 @@ fun GalleryView(
             item {
                 when (it) {
                     is GalleryItem.Folder -> FolderItem(item = it)
-                    is GalleryItem.FolderWithImage -> FolderItemWithImage(
-                        item = it,
-                        defaultImageContentScale
-                    )
                     is GalleryItem.Image -> TODO()
                     is GalleryItem.FolderWithAsyncImage -> FolderItemWithAsyncImage(
                         item = it,
@@ -237,18 +225,6 @@ fun GalleryView(
                 }
             }
         }
-        //        item {
-        //            FolderItem(item = GalleryItem.Folder("Item 1 asdasd asdasd asdasda sadasd asdadad asdasd"))
-        //        }
-        //        item {
-        //            FolderItem(item = GalleryItem.Folder("Item 2"))
-        //        }
-        //        item {
-        //            FolderItem(item = GalleryItem.Folder("Item 3"))
-        //        }
-        //        item {
-        //            FolderItem(item = GalleryItem.Folder("Item 4"))
-        //        }
     }
 }
 
