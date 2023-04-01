@@ -5,7 +5,6 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -21,36 +20,37 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.mapSaver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import androidx.core.graphics.decodeBitmap
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
+import coil.ImageLoader
+import coil.request.ImageRequest
 import dagger.hilt.android.AndroidEntryPoint
+import dev.kietyo.scrap.compose.FolderItem
+import dev.kietyo.scrap.compose.FolderItemWithAsyncImage
+import dev.kietyo.scrap.compose.FolderItemWithImage
 import dev.kietyo.scrap.compose.Header
 import dev.kietyo.scrap.ui.theme.AndroidComposeTemplateTheme
 
@@ -85,6 +85,16 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+val CitySaver = run {
+    listSaver<GalleryItem, Any>(
+        save = {
+        this
+    },
+    restore = {
+
+    })
+}
+
 @RequiresApi(Build.VERSION_CODES.P)
 @Composable
 fun HelloWorldContent(contentResolver: ContentResolver) {
@@ -96,17 +106,56 @@ fun HelloWorldContent(contentResolver: ContentResolver) {
 
     log("Received saved URI: $savedUri")
 
-    val selectedFolder = remember { mutableStateOf(savedUri?.toUri()) }
+    var selectedFolder by rememberSaveable { mutableStateOf(savedUri?.toUri()) }
     var imageContentScale by remember { mutableStateOf(ContentScale.Fit) }
+    var documentFile by remember {
+        mutableStateOf(selectedFolder?.let {
+            DocumentFile.fromTreeUri(context, it)
+        })
+    }
+
+    var galleryItems by rememberSaveable {
+        mutableStateOf(sequenceOf<GalleryItem>())
+    }
 
     val openFolderLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
     ) { uri: Uri? ->
         if (uri != null) {
             contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            selectedFolder.value = uri
+            selectedFolder = uri
             datastore.edit {
                 this.putString(PREFERENCE_SELECTED_FOLDER, uri.toString())
+            }
+
+            documentFile = DocumentFile.fromTreeUri(context, uri)
+
+            documentFile?.let {
+                galleryItems =
+                    it.listFiles().asSequence().filter { it.isDirectory }
+                        .map { directory ->
+                            val firstImageFileInDirectory = directory.listFiles().firstOrNull {
+                                it.isImage
+                            }
+                            if (firstImageFileInDirectory == null) {
+                                GalleryItem.Folder(directory.name!!)
+                            } else {
+                                //                                GalleryItem.FolderWithImage(
+                                //                                    directory.name!!,
+                                //                                    ImageDecoder.createSource(
+                                //                                        contentResolver,
+                                //                                        firstImageFileInDirectory.uri
+                                //                                    )
+                                //                                )
+                                //                                val imageRequest = ImageRequest.Builder(context).data(firstImageFileInDirectory.uri).build()
+                                //                                imageLoader.enqueue(imageRequest)
+                                GalleryItem.FolderWithAsyncImage(
+                                    directory.name!!,
+                                    ImageRequest.Builder(context)
+                                        .data(firstImageFileInDirectory.uri).build()
+                                )
+                            }
+                        }
             }
         }
     }
@@ -121,69 +170,31 @@ fun HelloWorldContent(contentResolver: ContentResolver) {
                 imageContentScale = it.contentScale
             })
 
-            selectedFolder.value?.let { uri ->
+            selectedFolder?.let { uri ->
                 log("kiet here")
                 log("Selected path: $uri")
                 log("uri.path: ${uri.path}")
                 log("uri.encodedPath: ${uri.encodedPath}")
-
-                val documentFile = DocumentFile.fromTreeUri(context, uri)
-                documentFile?.let { file ->
-                    log(file.name)
-                    log(file.type)
-                    log("Is file: ${file.isFile}")
-                    log("Is directory: ${file.isDirectory}")
-
-                    log("Files inside directory:")
-                    //                    file.listFiles().forEach {
-                    //                        log("${it.name}, isFile: ${it.isFile}, ${it.uri.path}")
-                    //                        if (it.isDirectory) {
-                    //                            it.listFiles().forEach { childFile ->
-                    //                                log("\t${childFile.name}, isFile: ${childFile.isFile}, childFile.getType(): ${childFile.getType()}, ${childFile.uri.path}")
-                    //                            }
-                    //                        }
-                    //                    }
-
-                    val galleryItems =
-                        file.listFiles().asSequence().filter { it.isDirectory }.map { directory ->
-                            val firstImageFileInDirectory = directory.listFiles().firstOrNull {
-                                it.isImage
-                            }
-                            if (firstImageFileInDirectory == null) {
-                                GalleryItem.Folder(directory.name!!)
-                            } else {
-                                GalleryItem.FolderWithImage(
-                                    directory.name!!,
-                                    ImageDecoder.createSource(
-                                        contentResolver,
-                                        firstImageFileInDirectory.uri
-                                    )
-                                )
-                            }
-                        }
-
-                    GalleryView(galleryItems, imageContentScale)
-
-                    //                    file.listFiles().filterNotNull().forEach {
-                    //                        if (it.isFile) {
-                    //                            val bitmap = ImageDecoder.createSource(contentResolver, it.uri)
-                    //                                .decodeBitmap { _, _ ->
-                    //                                }
-                    //                            Image(
-                    //                                painter = BitmapPainter(bitmap.asImageBitmap()),
-                    //                                contentDescription = it.name
-                    //                                    ?: "",
-                    //                                contentScale = ContentScale.FillWidth,
-                    //                                modifier = Modifier.fillMaxWidth()
-                    //                            )
-                    //                        } else {
-                    //                            Text(text = "Directory: ${it.name ?: ""}")
-                    //                        }
-                    //
-                    //                    }
-
-                }
             }
+
+            documentFile?.let { file ->
+                log(file.name)
+                log(file.type)
+                log("Is file: ${file.isFile}")
+                log("Is directory: ${file.isDirectory}")
+
+                //                    log("Files inside directory:")
+                //                    file.listFiles().forEach {
+                //                        log("${it.name}, isFile: ${it.isFile}, ${it.uri.path}")
+                //                        if (it.isDirectory) {
+                //                            it.listFiles().forEach { childFile ->
+                //                                log("\t${childFile.name}, isFile: ${childFile.isFile}, childFile.getType(): ${childFile.getType()}, ${childFile.uri.path}")
+                //                            }
+                //                        }
+                //                    }
+            }
+
+            GalleryView(galleryItems, imageContentScale)
         }
 
     }
@@ -199,7 +210,10 @@ fun log(content: Any?) {
 }
 
 @Composable
-fun GalleryView(galleryItems: Sequence<GalleryItem>, imageContentScale: ContentScale) {
+fun GalleryView(
+    galleryItems: Sequence<GalleryItem>,
+    defaultImageContentScale: ContentScale,
+) {
     //    val scrollState = ScrollState(0)
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
@@ -211,8 +225,15 @@ fun GalleryView(galleryItems: Sequence<GalleryItem>, imageContentScale: ContentS
             item {
                 when (it) {
                     is GalleryItem.Folder -> FolderItem(item = it)
-                    is GalleryItem.FolderWithImage -> FolderItemWithImage(item = it, imageContentScale)
+                    is GalleryItem.FolderWithImage -> FolderItemWithImage(
+                        item = it,
+                        defaultImageContentScale
+                    )
                     is GalleryItem.Image -> TODO()
+                    is GalleryItem.FolderWithAsyncImage -> FolderItemWithAsyncImage(
+                        item = it,
+                        imageContentScale = defaultImageContentScale
+                    )
                 }
             }
         }
@@ -239,64 +260,6 @@ fun GalleryViewPreview() {
             add(GalleryItem.Folder("Item $it"))
         }
     }.asSequence(), ContentScale.Fit)
-}
-
-@Composable
-fun FolderItem(item: GalleryItem.Folder) {
-    Box(
-        modifier = Modifier
-            .aspectRatio(1.0f)
-            .background(Color.Black)
-            .fillMaxSize()
-            .padding(3.dp),
-        contentAlignment = Alignment.BottomStart
-    ) {
-        Box(
-            Modifier
-                //                .wrapContentSize()
-                .fillMaxWidth()
-                .fillMaxHeight()
-                .background(Color.DarkGray)
-        ) {
-            val text = item.folderName
-            Text(
-                text = text,
-                fontSize = 10.sp,
-                color = Color.White,
-                modifier = Modifier.align(Alignment.BottomStart)
-            )
-        }
-    }
-}
-
-
-
-@Composable
-fun FolderItemWithImage(
-    item: GalleryItem.FolderWithImage,
-    imageContentScale: ContentScale,
-    imageModifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = Modifier
-            .aspectRatio(1.0f)
-            .background(Color.Black)
-            .fillMaxSize()
-    ) {
-        Image(
-            BitmapPainter(item.imageSource.decodeBitmap { info, source -> }.asImageBitmap()),
-            "a picture",
-            contentScale = imageContentScale,
-            modifier = imageModifier
-                .fillMaxWidth()
-        )
-        Text(
-            text = item.folderName,
-            fontSize = 10.sp,
-            color = Color.White,
-            modifier = Modifier.align(Alignment.BottomStart)
-        )
-    }
 }
 
 @Preview
