@@ -29,10 +29,11 @@ android {
         targetCompatibility = JavaVersion.VERSION_16
     }
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_16.toString()
+        jvmTarget = "1.8"
     }
     buildFeatures {
         compose = true
+        viewBinding = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = libs.versions.compose.get()
@@ -49,6 +50,10 @@ kapt {
 }
 
 dependencies {
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation("androidx.navigation:navigation-fragment-ktx:2.4.1")
+    implementation("androidx.navigation:navigation-ui-ktx:2.4.1")
     val platform = platform(libs.bom.compose)
     implementation(platform)
     androidTestImplementation(platform)

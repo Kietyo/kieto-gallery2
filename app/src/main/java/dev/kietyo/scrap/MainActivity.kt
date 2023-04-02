@@ -13,6 +13,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
@@ -22,17 +23,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.listSaver
-import androidx.compose.runtime.saveable.mapSaver
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -45,22 +39,19 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
-import coil.ImageLoader
 import coil.request.ImageRequest
 import dagger.hilt.android.AndroidEntryPoint
 import dev.kietyo.scrap.compose.FolderItem
-import dev.kietyo.scrap.compose.FolderItemWithAsyncImage
+import dev.kietyo.scrap.compose.GalleryView
+import dev.kietyo.scrap.compose.GalleryViewV2
 import dev.kietyo.scrap.compose.Header
 import dev.kietyo.scrap.ui.theme.AndroidComposeTemplateTheme
+import dev.kietyo.scrap.utils.isImage
+import dev.kietyo.scrap.viewmodels.GalleryViewModel
 import kotlin.streams.toList
 import kotlin.time.ExperimentalTime
-import kotlin.time.measureTime
 import kotlin.time.measureTimedValue
 
-private val DocumentFile.isImage: Boolean
-    get() {
-        return type == "image/jpeg"
-    }
 const val REQUEST_CODE_SELECT_FOLDER = 100
 const val MY_PREFERENCES = "MyPreferences"
 const val PREFERENCE_SELECTED_FOLDER = "PREFERENCE_SELECTED_FOLDER"
@@ -68,6 +59,8 @@ private const val MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 10
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    private val galleryViewModel: GalleryViewModel by viewModels()
 
     @RequiresApi(Build.VERSION_CODES.P)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -83,7 +76,7 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            HelloWorldContent(contentResolver)
+            HelloWorldContent(galleryViewModel, contentResolver)
         }
     }
 }
@@ -101,7 +94,9 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalTime::class)
 @RequiresApi(Build.VERSION_CODES.P)
 @Composable
-fun HelloWorldContent(contentResolver: ContentResolver) {
+fun HelloWorldContent(
+    galleryViewModel: GalleryViewModel,
+    contentResolver: ContentResolver) {
     val context = LocalContext.current
 
     val datastore = context.getSharedPreferences(MY_PREFERENCES, Context.MODE_PRIVATE)
@@ -111,7 +106,6 @@ fun HelloWorldContent(contentResolver: ContentResolver) {
     log("Received saved URI: $savedUri")
 
     var selectedFolder by remember { mutableStateOf(savedUri?.toUri()) }
-    var imageContentScale by remember { mutableStateOf(ContentScale.Fit) }
     var documentFile by remember {
         mutableStateOf(selectedFolder?.let {
             DocumentFile.fromTreeUri(context, it)
@@ -141,12 +135,28 @@ fun HelloWorldContent(contentResolver: ContentResolver) {
             log("Time to process all folder items: ${timeToProcessGalleryItems.duration}")
             timeToProcessGalleryItems.value
 
-        } ?: listOf()
+        }
+            ?: listOf()
     }
+//    var galleryyItems by remember {
+//        mutableStateOf(computeGalleryItems())
+//    }
 
-    var galleryItems by remember {
-        mutableStateOf(computeGalleryItems())
+    val computeGalleryItemsV2 = {
+        log("Computing gallery items V2...")
+        documentFile?.let {
+            val timeToProcessGalleryItems = measureTimedValue {
+                it.listFiles().asSequence().filter { it.isDirectory }.toList()
+            }
+            log("Time to process all folder items: ${timeToProcessGalleryItems.duration}")
+            timeToProcessGalleryItems.value
+
+        }
+            ?: listOf()
     }
+//    var galleryItemsV2 by remember {
+//        mutableStateOf(computeGalleryItemsV2())
+//    }
 
     val openFolderLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
@@ -184,7 +194,7 @@ fun HelloWorldContent(contentResolver: ContentResolver) {
                 //                    }
             }
 
-            galleryItems = computeGalleryItems()
+//            galleryItems = computeGalleryItems()
         }
     }
 
@@ -207,13 +217,12 @@ fun HelloWorldContent(contentResolver: ContentResolver) {
                 contentScales.first(),
                 contentScales,
                 onLoaderFolderClick = {
-                openFolderLauncher.launch(null)
-            }, onContentScaleSelection = {
-                imageContentScale = it.contentScale
-            })
-            GalleryView(galleryItems, imageContentScale)
+                    openFolderLauncher.launch(null)
+                }, onContentScaleSelection = {
+                    galleryViewModel.updateImageContentScale(it.contentScale)
+                })
+            documentFile?.let { GalleryViewV2(galleryViewModel, it) }
         }
-
     }
 }
 
@@ -224,33 +233,6 @@ data class ContentScaleSelection(
 
 fun log(content: Any?) {
     Log.d("KietHere", content.toString())
-}
-
-@Composable
-fun GalleryView(
-    galleryItems: List<GalleryItem>,
-    defaultImageContentScale: ContentScale,
-) {
-    //    val scrollState = ScrollState(0)
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
-        modifier = Modifier
-            .background(Color.Black)
-        //            .verticalScroll(scrollState)
-    ) {
-        galleryItems.forEach {
-            item {
-                when (it) {
-                    is GalleryItem.Folder -> FolderItem(item = it)
-                    is GalleryItem.Image -> TODO()
-                    is GalleryItem.FolderWithAsyncImage -> FolderItemWithAsyncImage(
-                        item = it,
-                        imageContentScale = defaultImageContentScale
-                    )
-                }
-            }
-        }
-    }
 }
 
 //@Preview
