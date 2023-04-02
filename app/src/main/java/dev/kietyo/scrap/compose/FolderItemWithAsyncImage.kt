@@ -23,7 +23,7 @@ fun FolderItemWithAsyncImage(
     item: GalleryItem.FolderWithAsyncImage,
     imageModifier: Modifier = Modifier,
 ) {
-    val myImageContentScale = galleryViewModel.imageContentSscaleFlow.collectAsState()
+    val myImageContentScale = galleryViewModel.imageContentScaleFlow.collectAsState()
     Box(
         modifier = Modifier
             .aspectRatio(1.0f)

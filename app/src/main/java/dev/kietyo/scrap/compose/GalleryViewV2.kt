@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,17 +21,19 @@ import androidx.compose.ui.unit.sp
 import dev.kietyo.scrap.GalleryItem
 import dev.kietyo.scrap.log
 import dev.kietyo.scrap.viewmodels.GalleryViewModel
+import kotlin.random.Random
 
 @Composable
 fun GalleryViewV2(
     galleryViewModel: GalleryViewModel,
     galleryItems: List<GalleryItem>,
 ) {
+    val numColumns = galleryViewModel.numColumnsFlow.collectAsState()
     log("Executing GalleryViewV2")
 //    val galleryItems = documentFile.listFiles().map { it.toGalleryItem() }
     var gridSize = IntSize(0, 0)
     LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
+        columns = GridCells.Fixed(numColumns.value),
         verticalArrangement = Arrangement.spacedBy(1.dp),
         horizontalArrangement = Arrangement.spacedBy(1.dp),
         modifier = Modifier
@@ -39,6 +42,7 @@ fun GalleryViewV2(
                 log("LazyVerticalGrid: layout coords: ${it.size}")
                 gridSize = it.size
             }
+            .fillMaxSize()
     ) {
         log("LazyVerticalGrid: gridSize: ${gridSize}")
         galleryItems.forEach {
@@ -69,10 +73,11 @@ fun ExampleFolderItemWithImage(folderName: String) {
                 log("layout coords: ${it.size}")
             }
     ) {
+        val randomAspect = Random.nextInt(25, 200) / 100f
         Box(
             modifier = Modifier
                 .background(Color.Red)
-                .aspectRatio(0.5f)
+                .aspectRatio(randomAspect)
                 .fillMaxSize()
                 .align(Alignment.Center)
         )

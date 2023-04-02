@@ -11,8 +11,11 @@ class GalleryViewModel: ViewModel() {
     init {
         log("GalleryViewModel init")
     }
+    private val _numColumnsFlow = MutableStateFlow(3)
+    val numColumnsFlow = _numColumnsFlow.asStateFlow()
+
     private val _imageContentScaleFlow = MutableStateFlow(ContentScale.Crop)
-    val imageContentSscaleFlow = _imageContentScaleFlow.asStateFlow()
+    val imageContentScaleFlow = _imageContentScaleFlow.asStateFlow()
     fun updateImageContentScale(newContentScale: ContentScale) {
         _imageContentScaleFlow.update {
             newContentScale
