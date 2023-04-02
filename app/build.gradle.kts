@@ -29,7 +29,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_16
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+//        jvmTarget = "1.8"
     }
     buildFeatures {
         compose = true

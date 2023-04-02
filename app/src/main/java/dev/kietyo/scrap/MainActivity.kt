@@ -1,6 +1,7 @@
 package dev.kietyo.scrap
 
 import android.Manifest
+import android.app.Activity
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
@@ -12,6 +13,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
@@ -41,11 +43,13 @@ import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import coil.request.ImageRequest
 import dagger.hilt.android.AndroidEntryPoint
+import dev.kietyo.scrap.activities.SettingsActivity
 import dev.kietyo.scrap.compose.FolderItem
-import dev.kietyo.scrap.compose.GalleryView
 import dev.kietyo.scrap.compose.GalleryViewV2
 import dev.kietyo.scrap.compose.Header
+import dev.kietyo.scrap.di.MyApplication
 import dev.kietyo.scrap.ui.theme.AndroidComposeTemplateTheme
+import dev.kietyo.scrap.utils.STRING_ACTIVITY_RESULT
 import dev.kietyo.scrap.utils.isImage
 import dev.kietyo.scrap.viewmodels.GalleryViewModel
 import kotlin.streams.toList
@@ -75,10 +79,18 @@ class MainActivity : ComponentActivity() {
             )
         }
 
+        val activityResultLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+                log("Got activity result")
+                log(it.resultCode)
+                log(it.data?.getStringExtra(STRING_ACTIVITY_RESULT))
+            }
+
         setContent {
-            HelloWorldContent(galleryViewModel, contentResolver)
+            HelloWorldContent(activityResultLauncher, galleryViewModel, contentResolver)
         }
     }
+
 }
 
 //val CitySaver = run {
@@ -95,8 +107,10 @@ class MainActivity : ComponentActivity() {
 @RequiresApi(Build.VERSION_CODES.P)
 @Composable
 fun HelloWorldContent(
+    activityResultLauncher: ActivityResultLauncher<Intent>,
     galleryViewModel: GalleryViewModel,
-    contentResolver: ContentResolver) {
+    contentResolver: ContentResolver
+) {
     val context = LocalContext.current
 
     val datastore = context.getSharedPreferences(MY_PREFERENCES, Context.MODE_PRIVATE)
@@ -138,9 +152,9 @@ fun HelloWorldContent(
         }
             ?: listOf()
     }
-//    var galleryyItems by remember {
-//        mutableStateOf(computeGalleryItems())
-//    }
+    //    var galleryyItems by remember {
+    //        mutableStateOf(computeGalleryItems())
+    //    }
 
     val computeGalleryItemsV2 = {
         log("Computing gallery items V2...")
@@ -154,9 +168,9 @@ fun HelloWorldContent(
         }
             ?: listOf()
     }
-//    var galleryItemsV2 by remember {
-//        mutableStateOf(computeGalleryItemsV2())
-//    }
+    //    var galleryItemsV2 by remember {
+    //        mutableStateOf(computeGalleryItemsV2())
+    //    }
 
     val openFolderLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
@@ -194,7 +208,7 @@ fun HelloWorldContent(
                 //                    }
             }
 
-//            galleryItems = computeGalleryItems()
+            //            galleryItems = computeGalleryItems()
         }
     }
 
@@ -218,8 +232,13 @@ fun HelloWorldContent(
                 contentScales,
                 onLoaderFolderClick = {
                     openFolderLauncher.launch(null)
-                }, onContentScaleSelection = {
+                },
+                onContentScaleSelection = {
                     galleryViewModel.updateImageContentScale(it.contentScale)
+                },
+                onSettingsButtonClick = {
+                    val intent = Intent(MyApplication.getAppContext(), SettingsActivity::class.java)
+                    activityResultLauncher.launch(intent)
                 })
             documentFile?.let { GalleryViewV2(galleryViewModel, it) }
         }

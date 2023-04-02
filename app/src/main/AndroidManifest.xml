@@ -15,7 +15,7 @@
             android:supportsRtl="true"
             android:theme="@style/Theme.Androidcomposetemplate">
         <activity
-                android:name=".SettingsActivity"
+                android:name="dev.kietyo.scrap.activities.SettingsActivity"
                 android:exported="false"
                 android:label="@string/title_activity_settings"
                 android:theme="@style/Theme.Androidcomposetemplate.NoActionBar" />

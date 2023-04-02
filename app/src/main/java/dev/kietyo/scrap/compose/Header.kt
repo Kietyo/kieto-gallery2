@@ -1,5 +1,6 @@
 package dev.kietyo.scrap.compose
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,13 +22,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import dev.kietyo.scrap.ContentScaleSelection
+import dev.kietyo.scrap.activities.SettingsActivity
+import dev.kietyo.scrap.di.MyApplication
 
 @Composable
 fun Header(
     initialContentScaleSelection: ContentScaleSelection,
     contentScaleSelections: List<ContentScaleSelection>,
     onLoaderFolderClick: () -> Unit,
-    onContentScaleSelection: (ContentScaleSelection) -> Unit
+    onContentScaleSelection: (ContentScaleSelection) -> Unit,
+    onSettingsButtonClick: () -> Unit,
 ) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
         Button(onClick = onLoaderFolderClick) {
@@ -55,6 +59,12 @@ fun Header(
                     }
                 }
             }
+        }
+        Button(onClick = {
+
+            onSettingsButtonClick()
+        }) {
+            Text(text = "Settings")
         }
     }
 }

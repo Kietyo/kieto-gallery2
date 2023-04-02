@@ -6,3 +6,5 @@ val DocumentFile.isImage: Boolean
     get() {
         return type == "image/jpeg"
     }
+
+const val STRING_ACTIVITY_RESULT = "STRING_ACTIVITY_RESULT"
