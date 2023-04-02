@@ -30,7 +30,8 @@ fun FolderItemWithAsyncImage(
             .background(Color.Black)
             .fillMaxSize()
     ) {
-        SubcomposeAsyncImage(model = item.imageRequest, contentDescription = "a pic",
+        SubcomposeAsyncImage(
+            model = item.imageRequest, contentDescription = "a pic",
             contentScale = myImageContentScale.value,
             modifier = imageModifier
                 .fillMaxWidth(),
@@ -38,12 +39,6 @@ fun FolderItemWithAsyncImage(
                 CircularProgressIndicator()
             }
         )
-        //        AsyncImage(
-        //            model = item.imageRequest, contentDescription = "a pic",
-        //            contentScale = imageContentScale,
-        //            modifier = imageModifier
-        //                .fillMaxWidth(),
-        //        )
         Text(
             text = item.folderName,
             fontSize = 10.sp,

@@ -51,6 +51,7 @@ import dev.kietyo.scrap.di.MyApplication
 import dev.kietyo.scrap.ui.theme.AndroidComposeTemplateTheme
 import dev.kietyo.scrap.utils.STRING_ACTIVITY_RESULT
 import dev.kietyo.scrap.utils.isImage
+import dev.kietyo.scrap.utils.toGalleryItem
 import dev.kietyo.scrap.viewmodels.GalleryViewModel
 import kotlin.streams.toList
 import kotlin.time.ExperimentalTime
@@ -63,7 +64,6 @@ private const val MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 10
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
     private val galleryViewModel: GalleryViewModel by viewModels()
 
     @RequiresApi(Build.VERSION_CODES.P)
@@ -240,7 +240,9 @@ fun HelloWorldContent(
                     val intent = Intent(MyApplication.getAppContext(), SettingsActivity::class.java)
                     activityResultLauncher.launch(intent)
                 })
-            documentFile?.let { GalleryViewV2(galleryViewModel, it) }
+            documentFile?.let {
+                val galleryItems = it.listFiles().map { it.toGalleryItem() }
+                GalleryViewV2(galleryViewModel, galleryItems) }
         }
     }
 }
