@@ -50,6 +50,7 @@ import dev.kietyo.scrap.compose.Header
 import dev.kietyo.scrap.di.MyApplication
 import dev.kietyo.scrap.ui.theme.AndroidComposeTemplateTheme
 import dev.kietyo.scrap.utils.STRING_ACTIVITY_RESULT
+import dev.kietyo.scrap.utils.contentScales
 import dev.kietyo.scrap.utils.isImage
 import dev.kietyo.scrap.utils.toGalleryItem
 import dev.kietyo.scrap.viewmodels.GalleryViewModel
@@ -213,17 +214,6 @@ fun HelloWorldContent(
     }
 
     val scrollState = ScrollState(0)
-
-    val contentScales = listOf(
-        ContentScaleSelection("Crop", ContentScale.Crop),
-        ContentScaleSelection("Fit", ContentScale.Fit),
-        ContentScaleSelection("Fill Height", ContentScale.FillHeight),
-        ContentScaleSelection("Fill Width", ContentScale.FillWidth),
-        ContentScaleSelection("Inside", ContentScale.Inside),
-        ContentScaleSelection("Fill Bounds", ContentScale.FillBounds),
-        ContentScaleSelection("None", ContentScale.None),
-    ).sortedBy { it.text }
-
 
     AndroidComposeTemplateTheme {
         Column {

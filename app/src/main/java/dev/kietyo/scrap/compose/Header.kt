@@ -12,6 +12,7 @@ import androidx.compose.material.Button
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.LocalContentColor
+import androidx.compose.material.OutlinedButton
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -40,7 +41,7 @@ fun Header(
         Box(modifier = Modifier.wrapContentSize()) {
             var expanded by remember { mutableStateOf(false) }
             var currentItem by remember { mutableStateOf(initialContentScaleSelection) }
-            Button(onClick = { expanded = true }) {
+            OutlinedButton(onClick = { expanded = true }) {
                 Text(text = "Select content scale")
             }
             DropdownMenu(
