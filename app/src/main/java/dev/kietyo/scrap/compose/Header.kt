@@ -25,13 +25,14 @@ import androidx.compose.ui.layout.ContentScale
 import dev.kietyo.scrap.ContentScaleSelection
 import dev.kietyo.scrap.activities.SettingsActivity
 import dev.kietyo.scrap.di.MyApplication
+import dev.kietyo.scrap.utils.ContentScaleEnum
 
 @Composable
 fun Header(
-    initialContentScaleSelection: ContentScaleSelection,
-    contentScaleSelections: List<ContentScaleSelection>,
+    initialContentScaleSelection: ContentScaleEnum,
+    contentScaleSelections: List<ContentScaleEnum>,
     onLoaderFolderClick: () -> Unit,
-    onContentScaleSelection: (ContentScaleSelection) -> Unit,
+    onContentScaleSelection: (ContentScaleEnum) -> Unit,
     onSettingsButtonClick: () -> Unit,
 ) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -56,13 +57,12 @@ fun Header(
                             currentItem = it
                             expanded = false
                         }) {
-                        Text(text = it.text)
+                        Text(text = it.displayText)
                     }
                 }
             }
         }
         Button(onClick = {
-
             onSettingsButtonClick()
         }) {
             Text(text = "Settings")

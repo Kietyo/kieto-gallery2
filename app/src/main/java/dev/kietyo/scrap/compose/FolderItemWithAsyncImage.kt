@@ -32,7 +32,7 @@ fun FolderItemWithAsyncImage(
     ) {
         SubcomposeAsyncImage(
             model = item.imageRequest, contentDescription = "a pic",
-            contentScale = myImageContentScale.value,
+            contentScale = myImageContentScale.value.contentScale,
             modifier = imageModifier
                 .fillMaxWidth(),
             loading = {

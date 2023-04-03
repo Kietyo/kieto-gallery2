@@ -224,7 +224,7 @@ fun HelloWorldContent(
                     openFolderLauncher.launch(null)
                 },
                 onContentScaleSelection = {
-                    galleryViewModel.updateImageContentScale(it.contentScale)
+                    galleryViewModel.updateImageContentScale(it)
                 },
                 onSettingsButtonClick = {
                     val intent = Intent(MyApplication.getAppContext(), SettingsActivity::class.java)

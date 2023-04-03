@@ -31,12 +31,17 @@ fun DocumentFile.toGalleryItem(): GalleryItem {
     }
 }
 
-val contentScales = listOf(
-    ContentScaleSelection("Crop", ContentScale.Crop),
-    ContentScaleSelection("Fit", ContentScale.Fit),
-    ContentScaleSelection("Fill Height", ContentScale.FillHeight),
-    ContentScaleSelection("Fill Width", ContentScale.FillWidth),
-    ContentScaleSelection("Inside", ContentScale.Inside),
-    ContentScaleSelection("Fill Bounds", ContentScale.FillBounds),
-    ContentScaleSelection("None", ContentScale.None),
-).sortedBy { it.text }
+enum class ContentScaleEnum(
+    val displayText: String,
+    val contentScale: ContentScale
+) {
+    CROP("Crop", ContentScale.Crop),
+    FIT("Fit", ContentScale.Fit),
+    FILL_HEIGHT("Fill Height", ContentScale.FillHeight),
+    FILL_WIDTH("Fill Width", ContentScale.FillWidth),
+    FILL_BOUNDS("Fill Bounds", ContentScale.FillBounds),
+    INSIDE("Inside", ContentScale.Inside),
+    NONE("None", ContentScale.None);
+}
+
+val contentScales = ContentScaleEnum.values().asSequence().sortedBy { it.displayText }.toList()

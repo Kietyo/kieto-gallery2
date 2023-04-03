@@ -3,6 +3,7 @@ package dev.kietyo.scrap.viewmodels
 import androidx.compose.ui.layout.ContentScale
 import androidx.lifecycle.ViewModel
 import dev.kietyo.scrap.log
+import dev.kietyo.scrap.utils.ContentScaleEnum
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -20,9 +21,9 @@ class GalleryViewModel: ViewModel() {
     fun incrementColumns() = _numColumnsFlow.update { min(it + 1, MAX_COLUMNS) }
     fun decrementColumns() = _numColumnsFlow.update { max(it - 1, 1) }
 
-    private val _imageContentScaleFlow = MutableStateFlow(ContentScale.Crop)
+    private val _imageContentScaleFlow = MutableStateFlow(ContentScaleEnum.CROP)
     val imageContentScaleFlow = _imageContentScaleFlow.asStateFlow()
-    fun updateImageContentScale(newContentScale: ContentScale) {
+    fun updateImageContentScale(newContentScale: ContentScaleEnum) {
         _imageContentScaleFlow.update {
             newContentScale
         }

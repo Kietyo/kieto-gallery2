@@ -108,46 +108,9 @@ fun SettingsContent(
             }
         }
 
-        Stepper(
-            "Num columns",
-            onMinus = { galleryViewModel.decrementColumns() },
-            onPlus = { galleryViewModel.incrementColumns() },
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text("Content scale",
-                modifier = Modifier.weight(1f))
-
-            Box(modifier = Modifier.wrapContentSize()) {
-                var expanded by remember { mutableStateOf(false) }
-                val currentItem = galleryViewModel.imageContentScaleFlow.collectAsState()
-                OutlinedButton(onClick = { expanded = true }) {
-                    Text(text = "Select content scale")
-                }
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }) {
-                    contentScales.forEach {
-                        DropdownMenuItem(
-                            modifier = Modifier
-                                .background(if (currentItem.value == it.contentScale) Color.LightGray else Color.White),
-                            onClick = {
-                                galleryViewModel.updateImageContentScale(it.contentScale)
-                                expanded = false
-                            }) {
-                            Text(text = it.text)
-                        }
-                    }
-                }
-            }
-        }
-
-        val numColumns = galleryViewModel.numColumnsFlow.collectAsState().value
-
-        val exampleImages by remember {
+        val computeExampleImagesFn = {
+            log("Generating example images")
+            val numColumns = galleryViewModel.numColumnsFlow.value
             val windowSize = settingsViewModel.windowSize
             val width = windowSize.bounds.width()
             val pixelsPerColumn = width / numColumns.toDouble()
@@ -156,10 +119,60 @@ fun SettingsContent(
             val numGalleryItemsForHeight = ceil(height / heightPerGalleryItem).toInt()
             val totalGalleryItems = numGalleryItemsForHeight * numColumns
             log("totalGalleryItems: $totalGalleryItems")
-            mutableStateOf((1..totalGalleryItems).map {
+            (1..totalGalleryItems).map {
                 GalleryItem.ExampleImage("item $it", exampleImages.random())
-            })
+            }
         }
+
+        var exampleImages by remember {
+            mutableStateOf(computeExampleImagesFn())
+        }
+
+        Stepper(
+            "Num columns",
+            onMinus = {
+                galleryViewModel.decrementColumns()
+                exampleImages = computeExampleImagesFn()
+            },
+            onPlus = {
+                galleryViewModel.incrementColumns()
+                exampleImages = computeExampleImagesFn()
+            },
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "Content scale",
+                modifier = Modifier.weight(1f)
+            )
+
+            Box(modifier = Modifier.wrapContentSize()) {
+                var expanded by remember { mutableStateOf(false) }
+                val currentItem = galleryViewModel.imageContentScaleFlow.collectAsState()
+                OutlinedButton(onClick = { expanded = true }) {
+                    Text(text = currentItem.value.displayText)
+                }
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }) {
+                    contentScales.forEach {
+                        DropdownMenuItem(
+                            modifier = Modifier
+                                .background(if (currentItem.value == it) Color.LightGray else Color.White),
+                            onClick = {
+                                galleryViewModel.updateImageContentScale(it)
+                                expanded = false
+                            }) {
+                            Text(text = it.displayText)
+                        }
+                    }
+                }
+            }
+        }
+
 
         GalleryViewV2(
             galleryViewModel = galleryViewModel,
@@ -167,6 +180,7 @@ fun SettingsContent(
         )
     }
 }
+
 
 @Composable
 fun Stepper(

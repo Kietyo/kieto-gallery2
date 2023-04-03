@@ -85,9 +85,6 @@ fun ExampleFolderItemWithImage(
             .aspectRatio(1.0f)
             .background(Color.Black)
             .fillMaxSize()
-            .onGloballyPositioned {
-                log("layout coords: ${it.size}")
-            }
     ) {
 //        val randomAspect = Random.nextInt(25, 200) / 100f
 //        Box(
@@ -100,7 +97,7 @@ fun ExampleFolderItemWithImage(
         AsyncImage(
             model = exampleImage,
             contentDescription = "example image",
-            contentScale = imageContentScale.value,
+            contentScale = imageContentScale.value.contentScale,
             modifier = Modifier.fillMaxWidth()
         )
         Text(
