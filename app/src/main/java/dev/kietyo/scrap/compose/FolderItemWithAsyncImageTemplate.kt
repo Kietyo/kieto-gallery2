@@ -35,8 +35,9 @@ fun FolderItemWithAsyncImageTemplate(
             model = model,
             contentDescription = "a pic",
             contentScale = contentScaleState.value.contentScale,
-            modifier = Modifier.fillMaxWidth(),
             alignment = alignmentState.value.alignment,
+            modifier = Modifier.fillMaxWidth()
+                .align(Alignment.Center),
             loading = {
                 CircularProgressIndicator()
             }
