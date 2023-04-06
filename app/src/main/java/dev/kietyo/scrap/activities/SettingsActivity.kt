@@ -44,6 +44,11 @@ import dev.kietyo.scrap.utils.alignments
 import dev.kietyo.scrap.utils.contentScales
 import dev.kietyo.scrap.viewmodels.GalleryViewModel
 import dev.kietyo.scrap.viewmodels.SettingsViewModel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlin.coroutines.coroutineContext
 import kotlin.math.ceil
 
 @RequiresApi(Build.VERSION_CODES.R)
@@ -72,13 +77,16 @@ class SettingsActivity : ComponentActivity() {
 
         settingsViewModel.windowSize = WindowSizeData(windowManager.currentWindowMetrics.bounds)
 
-        setContent {
-            AndroidComposeTemplateTheme {
-                SettingsContent(settingsViewModel, galleryViewModel) {
-                    end()
+
+            setContent {
+                AndroidComposeTemplateTheme {
+                    SettingsContent(settingsViewModel, galleryViewModel) {
+                        end()
+                    }
                 }
             }
-        }
+
+
     }
 
     private fun end() {
@@ -111,16 +119,19 @@ fun SettingsContent(
             }
         }
 
+        var currentColumnNum by remember {
+            mutableStateOf(galleryViewModel.numColumnsFlow.value)
+        }
+
         val computeExampleImagesFn = {
             log("Generating example images")
-            val numColumns = galleryViewModel.numColumnsFlow.value
             val windowSize = settingsViewModel.windowSize
             val width = windowSize.bounds.width()
-            val pixelsPerColumn = width / numColumns.toDouble()
+            val pixelsPerColumn = width / currentColumnNum.toDouble()
             val heightPerGalleryItem = pixelsPerColumn
             val height = windowSize.bounds.height()
             val numGalleryItemsForHeight = ceil(height / heightPerGalleryItem).toInt()
-            val totalGalleryItems = numGalleryItemsForHeight * numColumns
+            val totalGalleryItems = numGalleryItemsForHeight * currentColumnNum
             log("totalGalleryItems: $totalGalleryItems")
             (1..totalGalleryItems).map {
                 GalleryItem.ExampleImage("item $it", exampleImages.random())
@@ -131,19 +142,40 @@ fun SettingsContent(
             mutableStateOf(computeExampleImagesFn())
         }
 
-        Stepper(
-            "Num columns",
-            onMinus = {
-                val currentNumColumns = galleryViewModel.numColumnsFlow.value
-                galleryViewModel.decrementColumns()
-                val newNumColumns = galleryViewModel.numColumnsFlow.value
-                if (currentNumColumns != newNumColumns) {
+        ImageSettingsContent(
+            settingsViewModel = settingsViewModel,
+            galleryViewModel = galleryViewModel,
+            onColumnChange = {
+                if (it != currentColumnNum) {
+                    currentColumnNum = it
                     exampleImages = computeExampleImagesFn()
                 }
             },
+            onSaveButtonClick = onSaveButtonClick,
+        )
+
+        GalleryViewV2(
+            galleryViewModel = galleryViewModel,
+            galleryItems = exampleImages
+        )
+    }
+}
+
+@Composable
+fun ImageSettingsContent(
+    settingsViewModel: SettingsViewModel,
+    galleryViewModel: GalleryViewModel,
+    onColumnChange: (Int) -> Unit,
+    onSaveButtonClick: (String) -> Unit
+) {
+    Column {
+        Stepper(
+            "Num columns",
+            onMinus = {
+                onColumnChange(galleryViewModel.decrementColumns())
+            },
             onPlus = {
-                galleryViewModel.incrementColumns()
-                exampleImages = computeExampleImagesFn()
+                onColumnChange(galleryViewModel.incrementColumns())
             },
         )
 
@@ -165,12 +197,13 @@ fun SettingsContent(
             }
         )
 
-        GalleryViewV2(
-            galleryViewModel = galleryViewModel,
-            galleryItems = exampleImages
-        )
+        TextButton(
+            onClick = { onSaveButtonClick("") }) {
+            Text(text = "Save")
+        }
     }
 }
+
 
 @Composable
 fun <T : DisplayTextI> SettingRow(

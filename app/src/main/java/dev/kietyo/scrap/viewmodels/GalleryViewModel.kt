@@ -7,6 +7,7 @@ import dev.kietyo.scrap.utils.ContentScaleEnum
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.updateAndGet
 import kotlin.math.max
 import kotlin.math.min
 
@@ -18,8 +19,8 @@ class GalleryViewModel: ViewModel() {
     }
     private val _numColumnsFlow = MutableStateFlow(3)
     val numColumnsFlow = _numColumnsFlow.asStateFlow()
-    fun incrementColumns() = _numColumnsFlow.update { min(it + 1, MAX_COLUMNS) }
-    fun decrementColumns() = _numColumnsFlow.update { max(it - 1, 1) }
+    fun incrementColumns() = _numColumnsFlow.updateAndGet { min(it + 1, MAX_COLUMNS) }
+    fun decrementColumns() = _numColumnsFlow.updateAndGet { max(it - 1, 1) }
 
     private val _imageContentScaleFlow = MutableStateFlow(ContentScaleEnum.CROP)
     val imageContentScaleFlow = _imageContentScaleFlow.asStateFlow()
