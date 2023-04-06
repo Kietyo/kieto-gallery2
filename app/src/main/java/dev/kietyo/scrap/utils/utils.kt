@@ -1,5 +1,6 @@
 package dev.kietyo.scrap.utils
 
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.ContentScale
 import androidx.documentfile.provider.DocumentFile
 import coil.request.ImageRequest
@@ -45,3 +46,14 @@ enum class ContentScaleEnum(
 }
 
 val contentScales = ContentScaleEnum.values().asSequence().sortedBy { it.displayText }.toList()
+
+enum class AlignmentEnum(
+    val displayText: String,
+    val alignment: Alignment
+) {
+    TOP("Top Center", Alignment.TopCenter),
+    CENTER("Center", Alignment.Center),
+    BOTTOM_CENTER("Bottom Center", Alignment.BottomCenter),
+}
+
+val alignments = AlignmentEnum.values().toList()

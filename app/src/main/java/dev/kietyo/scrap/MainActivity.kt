@@ -6,6 +6,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -41,6 +42,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
+import coil.ImageLoader
+import coil.imageLoader
 import coil.request.ImageRequest
 import dagger.hilt.android.AndroidEntryPoint
 import dev.kietyo.scrap.activities.SettingsActivity
@@ -79,6 +82,9 @@ class MainActivity : ComponentActivity() {
                 MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE
             )
         }
+
+        val imageLoader = ImageLoader.Builder(baseContext).build()
+
 
         val activityResultLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {

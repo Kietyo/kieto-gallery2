@@ -38,6 +38,7 @@ import dev.kietyo.scrap.compose.GalleryViewV2
 import dev.kietyo.scrap.compose.exampleImages
 import dev.kietyo.scrap.log
 import dev.kietyo.scrap.ui.theme.AndroidComposeTemplateTheme
+import dev.kietyo.scrap.utils.alignments
 import dev.kietyo.scrap.utils.contentScales
 import dev.kietyo.scrap.viewmodels.GalleryViewModel
 import dev.kietyo.scrap.viewmodels.SettingsViewModel
@@ -131,8 +132,12 @@ fun SettingsContent(
         Stepper(
             "Num columns",
             onMinus = {
+                val currentNumColumns = galleryViewModel.numColumnsFlow.value
                 galleryViewModel.decrementColumns()
-                exampleImages = computeExampleImagesFn()
+                val newNumColumns = galleryViewModel.numColumnsFlow.value
+                if (currentNumColumns != newNumColumns) {
+                    exampleImages = computeExampleImagesFn()
+                }
             },
             onPlus = {
                 galleryViewModel.incrementColumns()
@@ -173,6 +178,38 @@ fun SettingsContent(
             }
         }
 
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "Alignment",
+                modifier = Modifier.weight(1f)
+            )
+
+            Box(modifier = Modifier.wrapContentSize()) {
+                var expanded by remember { mutableStateOf(false) }
+                val currentItem = galleryViewModel.alignmentFlow.collectAsState()
+                OutlinedButton(onClick = { expanded = true }) {
+                    Text(text = currentItem.value.displayText)
+                }
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }) {
+                    alignments.forEach {
+                        DropdownMenuItem(
+                            modifier = Modifier
+                                .background(if (currentItem.value == it) Color.LightGray else Color.White),
+                            onClick = {
+                                galleryViewModel.updateAlignment(it)
+                                expanded = false
+                            }) {
+                            Text(text = it.displayText)
+                        }
+                    }
+                }
+            }
+        }
 
         GalleryViewV2(
             galleryViewModel = galleryViewModel,

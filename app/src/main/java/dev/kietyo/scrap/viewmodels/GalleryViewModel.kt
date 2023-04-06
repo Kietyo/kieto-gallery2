@@ -1,8 +1,8 @@
 package dev.kietyo.scrap.viewmodels
 
-import androidx.compose.ui.layout.ContentScale
 import androidx.lifecycle.ViewModel
 import dev.kietyo.scrap.log
+import dev.kietyo.scrap.utils.AlignmentEnum
 import dev.kietyo.scrap.utils.ContentScaleEnum
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,4 +28,13 @@ class GalleryViewModel: ViewModel() {
             newContentScale
         }
     }
+
+    private val _alignmentFlow = MutableStateFlow(AlignmentEnum.CENTER)
+    val alignmentFlow = _alignmentFlow.asStateFlow()
+    fun updateAlignment(newAlignment: AlignmentEnum) {
+        _alignmentFlow.update {
+            newAlignment
+        }
+    }
+
 }
