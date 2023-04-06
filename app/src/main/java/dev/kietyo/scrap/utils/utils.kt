@@ -32,10 +32,14 @@ fun DocumentFile.toGalleryItem(): GalleryItem {
     }
 }
 
+interface DisplayTextI {
+    val displayText: String
+}
+
 enum class ContentScaleEnum(
-    val displayText: String,
+    override val displayText: String,
     val contentScale: ContentScale
-) {
+): DisplayTextI {
     CROP("Crop", ContentScale.Crop),
     FIT("Fit", ContentScale.Fit),
     FILL_HEIGHT("Fill Height", ContentScale.FillHeight),
@@ -48,9 +52,9 @@ enum class ContentScaleEnum(
 val contentScales = ContentScaleEnum.values().asSequence().sortedBy { it.displayText }.toList()
 
 enum class AlignmentEnum(
-    val displayText: String,
+    override val displayText: String,
     val alignment: Alignment
-) {
+): DisplayTextI {
     TOP("Top Center", Alignment.TopCenter),
     CENTER("Center", Alignment.Center),
     BOTTOM_CENTER("Bottom Center", Alignment.BottomCenter),

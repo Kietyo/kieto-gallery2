@@ -24,6 +24,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,6 +39,7 @@ import dev.kietyo.scrap.compose.GalleryViewV2
 import dev.kietyo.scrap.compose.exampleImages
 import dev.kietyo.scrap.log
 import dev.kietyo.scrap.ui.theme.AndroidComposeTemplateTheme
+import dev.kietyo.scrap.utils.DisplayTextI
 import dev.kietyo.scrap.utils.alignments
 import dev.kietyo.scrap.utils.contentScales
 import dev.kietyo.scrap.viewmodels.GalleryViewModel
@@ -145,71 +147,23 @@ fun SettingsContent(
             },
         )
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "Content scale",
-                modifier = Modifier.weight(1f)
-            )
-
-            Box(modifier = Modifier.wrapContentSize()) {
-                var expanded by remember { mutableStateOf(false) }
-                val currentItem = galleryViewModel.imageContentScaleFlow.collectAsState()
-                OutlinedButton(onClick = { expanded = true }) {
-                    Text(text = currentItem.value.displayText)
-                }
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }) {
-                    contentScales.forEach {
-                        DropdownMenuItem(
-                            modifier = Modifier
-                                .background(if (currentItem.value == it) Color.LightGray else Color.White),
-                            onClick = {
-                                galleryViewModel.updateImageContentScale(it)
-                                expanded = false
-                            }) {
-                            Text(text = it.displayText)
-                        }
-                    }
-                }
+        SettingRow(
+            "Content scale",
+            galleryViewModel.imageContentScaleFlow.collectAsState(),
+            contentScales,
+            onDropdownItemSelect = {
+                galleryViewModel.updateImageContentScale(it)
             }
-        }
+        )
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "Alignment",
-                modifier = Modifier.weight(1f)
-            )
-
-            Box(modifier = Modifier.wrapContentSize()) {
-                var expanded by remember { mutableStateOf(false) }
-                val currentItem = galleryViewModel.alignmentFlow.collectAsState()
-                OutlinedButton(onClick = { expanded = true }) {
-                    Text(text = currentItem.value.displayText)
-                }
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }) {
-                    alignments.forEach {
-                        DropdownMenuItem(
-                            modifier = Modifier
-                                .background(if (currentItem.value == it) Color.LightGray else Color.White),
-                            onClick = {
-                                galleryViewModel.updateAlignment(it)
-                                expanded = false
-                            }) {
-                            Text(text = it.displayText)
-                        }
-                    }
-                }
+        SettingRow(
+            "Alignment",
+            galleryViewModel.alignmentFlow.collectAsState(),
+            alignments,
+            onDropdownItemSelect = {
+                galleryViewModel.updateAlignment(it)
             }
-        }
+        )
 
         GalleryViewV2(
             galleryViewModel = galleryViewModel,
@@ -218,6 +172,46 @@ fun SettingsContent(
     }
 }
 
+@Composable
+fun <T : DisplayTextI> SettingRow(
+    settingText: String,
+    defaultItem: State<T>,
+    items: List<T>,
+    onDropdownItemSelect: (T) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            settingText,
+            modifier = Modifier.weight(1f)
+        )
+
+        Box(modifier = Modifier.wrapContentSize()) {
+            var expanded by remember { mutableStateOf(false) }
+            val currentItem = defaultItem
+            OutlinedButton(onClick = { expanded = true }) {
+                Text(text = currentItem.value.displayText)
+            }
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }) {
+                items.forEach {
+                    DropdownMenuItem(
+                        modifier = Modifier
+                            .background(if (currentItem.value == it) Color.LightGray else Color.White),
+                        onClick = {
+                            onDropdownItemSelect(it)
+                            expanded = false
+                        }) {
+                        Text(text = it.displayText)
+                    }
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun Stepper(
