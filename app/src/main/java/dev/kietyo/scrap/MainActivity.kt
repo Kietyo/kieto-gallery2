@@ -17,7 +17,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,22 +40,16 @@ import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import coil.ImageLoader
-import coil.request.ImageRequest
 import dagger.hilt.android.AndroidEntryPoint
-import dev.kietyo.scrap.activities.SettingsActivity
+import dev.kietyo.scrap.activities.ImageSettingsContent
 import dev.kietyo.scrap.compose.FolderItem
 import dev.kietyo.scrap.compose.GalleryViewV2
 import dev.kietyo.scrap.compose.Header
-import dev.kietyo.scrap.di.MyApplication
 import dev.kietyo.scrap.ui.theme.AndroidComposeTemplateTheme
 import dev.kietyo.scrap.utils.STRING_ACTIVITY_RESULT
-import dev.kietyo.scrap.utils.contentScales
-import dev.kietyo.scrap.utils.isImage
 import dev.kietyo.scrap.utils.toGalleryItem
 import dev.kietyo.scrap.viewmodels.GalleryViewModel
-import kotlin.streams.toList
 import kotlin.time.ExperimentalTime
-import kotlin.time.measureTimedValue
 
 const val REQUEST_CODE_SELECT_FOLDER = 100
 const val MY_PREFERENCES = "MyPreferences"
@@ -82,43 +75,28 @@ class MainActivity : ComponentActivity() {
 
         val imageLoader = ImageLoader.Builder(baseContext).build()
 
-
-        val activityResultLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-                log("Got activity result")
-                log(it.resultCode)
-                log(it.data?.getStringExtra(STRING_ACTIVITY_RESULT))
-            }
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            log("Got activity result")
+            log(it.resultCode)
+            log(it.data?.getStringExtra(STRING_ACTIVITY_RESULT))
+        }
 
         setContent {
-            MainContent(activityResultLauncher, galleryViewModel, contentResolver)
+            MainContent(galleryViewModel, contentResolver)
         }
     }
 
 }
 
-//val CitySaver = run {
-//    listSaver<GalleryItem, Any>(
-//        save = {
-//        this
-//    },
-//    restore = {
-//
-//    })
-//}
-
 @OptIn(ExperimentalTime::class)
 @RequiresApi(Build.VERSION_CODES.P)
 @Composable
 fun MainContent(
-    activityResultLauncher: ActivityResultLauncher<Intent>,
     galleryViewModel: GalleryViewModel,
     contentResolver: ContentResolver
 ) {
     val context = LocalContext.current
-
     val datastore = context.getSharedPreferences(MY_PREFERENCES, Context.MODE_PRIVATE)
-
     val savedUri = datastore.getString(PREFERENCE_SELECTED_FOLDER, null)
 
     log("Received saved URI: $savedUri")
@@ -129,52 +107,6 @@ fun MainContent(
             DocumentFile.fromTreeUri(context, it)
         })
     }
-
-    val computeGalleryItems = {
-        log("Computing gallery items...")
-        documentFile?.let {
-            val timeToProcessGalleryItems = measureTimedValue {
-                it.listFiles().toList().parallelStream().filter { it.isDirectory }
-                    .map { directory ->
-                        val firstImageFileInDirectory = directory.listFiles().firstOrNull {
-                            it.isImage
-                        }
-                        if (firstImageFileInDirectory == null) {
-                            GalleryItem.Folder(directory.name!!)
-                        } else {
-                            GalleryItem.FolderWithAsyncImage(
-                                directory.name!!,
-                                ImageRequest.Builder(context)
-                                    .data(firstImageFileInDirectory.uri).build()
-                            )
-                        }
-                    }?.toList()
-            }
-            log("Time to process all folder items: ${timeToProcessGalleryItems.duration}")
-            timeToProcessGalleryItems.value
-
-        }
-            ?: listOf()
-    }
-    //    var galleryyItems by remember {
-    //        mutableStateOf(computeGalleryItems())
-    //    }
-
-    val computeGalleryItemsV2 = {
-        log("Computing gallery items V2...")
-        documentFile?.let {
-            val timeToProcessGalleryItems = measureTimedValue {
-                it.listFiles().asSequence().filter { it.isDirectory }.toList()
-            }
-            log("Time to process all folder items: ${timeToProcessGalleryItems.duration}")
-            timeToProcessGalleryItems.value
-
-        }
-            ?: listOf()
-    }
-    //    var galleryItemsV2 by remember {
-    //        mutableStateOf(computeGalleryItemsV2())
-    //    }
 
     val openFolderLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
@@ -216,26 +148,39 @@ fun MainContent(
         }
     }
 
-    val scrollState = ScrollState(0)
-
     AndroidComposeTemplateTheme {
         Column {
-            Header(
-                contentScales.first(),
-                contentScales,
-                onLoaderFolderClick = {
-                    openFolderLauncher.launch(null)
-                },
-                onContentScaleSelection = {
-                    galleryViewModel.updateImageContentScale(it)
-                },
-                onSettingsButtonClick = {
-                    val intent = Intent(MyApplication.getAppContext(), SettingsActivity::class.java)
-                    activityResultLauncher.launch(intent)
-                })
-            documentFile?.let {
-                val galleryItems = it.listFiles().map { it.toGalleryItem() }
+            ExpandableHeader(galleryViewModel, openFolderLauncher)
+
+            documentFile?.let { file ->
+                val galleryItems = file.listFiles().map { it.toGalleryItem() }
                 GalleryViewV2(galleryViewModel, galleryItems) }
+        }
+    }
+}
+
+@Composable
+fun ExpandableHeader(
+    galleryViewModel: GalleryViewModel,
+    openFolderLauncher: ActivityResultLauncher<Uri?>
+) {
+    var isSettingsOpen by remember {
+        mutableStateOf(false)
+    }
+    if (isSettingsOpen) {
+        ImageSettingsContent(
+            galleryViewModel = galleryViewModel,
+            onCancelButtonClick = {
+                isSettingsOpen = false
+            }
+        )
+    } else {
+        Header(
+            onLoaderFolderClick = {
+                openFolderLauncher.launch(null)
+            }
+        ) {
+            isSettingsOpen = true
         }
     }
 }

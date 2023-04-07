@@ -140,7 +140,6 @@ fun SettingsContent(
         }
 
         ImageSettingsContent(
-            settingsViewModel = settingsViewModel,
             galleryViewModel = galleryViewModel,
             onColumnChange = {
                 if (it != currentColumnNum) {
@@ -160,10 +159,10 @@ fun SettingsContent(
 
 @Composable
 fun ImageSettingsContent(
-    settingsViewModel: SettingsViewModel,
     galleryViewModel: GalleryViewModel,
-    onColumnChange: (Int) -> Unit,
-    onSaveButtonClick: (String) -> Unit
+    onColumnChange: (Int) -> Unit = {},
+    onSaveButtonClick: (String) -> Unit = {},
+    onCancelButtonClick: () -> Unit = {}
 ) {
     Column {
         Stepper(
@@ -194,10 +193,17 @@ fun ImageSettingsContent(
             }
         )
 
-        TextButton(
-            onClick = { onSaveButtonClick("") }) {
-            Text(text = "Save")
+        Row {
+            TextButton(
+                onClick = { onCancelButtonClick() }) {
+                Text(text = "Cancel")
+            }
+            TextButton(
+                onClick = { onSaveButtonClick("") }) {
+                Text(text = "Save")
+            }
         }
+
     }
 }
 

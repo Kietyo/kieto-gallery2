@@ -13,10 +13,22 @@ import kotlin.math.min
 
 const val MAX_COLUMNS = 10
 
+data class GallerySettings(
+    val numColumns: Int,
+    val contentScaleEnum: ContentScaleEnum,
+    val alignmentEnum: AlignmentEnum
+)
+
 class GalleryViewModel: ViewModel() {
     init {
         log("GalleryViewModel init")
     }
+
+    val currentGallerySettings get() = GallerySettings(
+        numColumnsFlow.value,
+        imageContentScaleFlow.value,
+        alignmentFlow.value)
+
     private val _numColumnsFlow = MutableStateFlow(3)
     val numColumnsFlow = _numColumnsFlow.asStateFlow()
     fun incrementColumns() = _numColumnsFlow.updateAndGet { min(it + 1, MAX_COLUMNS) }
