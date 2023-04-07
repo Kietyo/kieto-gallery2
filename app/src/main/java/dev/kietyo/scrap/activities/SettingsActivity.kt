@@ -76,16 +76,13 @@ class SettingsActivity : ComponentActivity() {
         log("windowManager.currentWindowMetrics: ${windowManager.currentWindowMetrics.asString()}")
 
         settingsViewModel.windowSize = WindowSizeData(windowManager.currentWindowMetrics.bounds)
-
-
-            setContent {
-                AndroidComposeTemplateTheme {
-                    SettingsContent(settingsViewModel, galleryViewModel) {
-                        end()
-                    }
+        setContent {
+            AndroidComposeTemplateTheme {
+                SettingsContent(settingsViewModel, galleryViewModel) {
+                    end()
                 }
             }
-
+        }
 
     }
 
@@ -203,7 +200,6 @@ fun ImageSettingsContent(
         }
     }
 }
-
 
 @Composable
 fun <T : DisplayTextI> SettingRow(

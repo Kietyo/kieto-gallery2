@@ -1,12 +1,10 @@
 package dev.kietyo.scrap
 
 import android.Manifest
-import android.app.Activity
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -43,7 +41,6 @@ import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import coil.ImageLoader
-import coil.imageLoader
 import coil.request.ImageRequest
 import dagger.hilt.android.AndroidEntryPoint
 import dev.kietyo.scrap.activities.SettingsActivity
@@ -94,7 +91,7 @@ class MainActivity : ComponentActivity() {
             }
 
         setContent {
-            HelloWorldContent(activityResultLauncher, galleryViewModel, contentResolver)
+            MainContent(activityResultLauncher, galleryViewModel, contentResolver)
         }
     }
 
@@ -113,7 +110,7 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalTime::class)
 @RequiresApi(Build.VERSION_CODES.P)
 @Composable
-fun HelloWorldContent(
+fun MainContent(
     activityResultLauncher: ActivityResultLauncher<Intent>,
     galleryViewModel: GalleryViewModel,
     contentResolver: ContentResolver
