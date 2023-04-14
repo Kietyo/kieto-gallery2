@@ -39,9 +39,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
-import coil.ImageLoader
 import dagger.hilt.android.AndroidEntryPoint
-import dev.kietyo.scrap.activities.ImageSettingsContent
+import dev.kietyo.scrap.compose.ImageSettingsContent
 import dev.kietyo.scrap.compose.FolderItem
 import dev.kietyo.scrap.compose.GalleryViewV2
 import dev.kietyo.scrap.compose.Header
@@ -72,8 +71,6 @@ class MainActivity : ComponentActivity() {
                 MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE
             )
         }
-
-        val imageLoader = ImageLoader.Builder(baseContext).build()
 
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             log("Got activity result")
@@ -154,7 +151,8 @@ fun MainContent(
 
             documentFile?.let { file ->
                 val galleryItems = file.listFiles().map { it.toGalleryItem() }
-                GalleryViewV2(galleryViewModel, galleryItems) }
+                GalleryViewV2(galleryViewModel, galleryItems)
+            }
         }
     }
 }
@@ -167,10 +165,16 @@ fun ExpandableHeader(
     var isSettingsOpen by remember {
         mutableStateOf(false)
     }
+    var currentGallerySettings = galleryViewModel.currentGallerySettings
     if (isSettingsOpen) {
         ImageSettingsContent(
             galleryViewModel = galleryViewModel,
+            onSaveButtonClick = {
+                currentGallerySettings = galleryViewModel.currentGallerySettings
+                isSettingsOpen = false
+            },
             onCancelButtonClick = {
+                galleryViewModel.applyGallerySettings(currentGallerySettings)
                 isSettingsOpen = false
             }
         )

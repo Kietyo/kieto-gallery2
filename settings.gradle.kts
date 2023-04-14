@@ -31,7 +31,7 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "android-compose-template"
+rootProject.name = "kieto-gallery"
 
 //include ":app"
 include(":app")

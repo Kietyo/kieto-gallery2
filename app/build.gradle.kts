@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.android.hilt)
     alias(libs.plugins.kotlin.android)
     id("kotlin-parcelize")
+//    kotlin("plugin.serialization") version "1.8.10"
+    alias(libs.plugins.kotlin.plugin.serialization)
 }
 
 android {
@@ -69,6 +71,8 @@ dependencies {
     implementation(libs.compose.activity)
     implementation(libs.coil)
     implementation(libs.coil.compose)
+
+    implementation(libs.kotlinx.serialization.json)
 
     testImplementation(libs.androidx.junit)
 

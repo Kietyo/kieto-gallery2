@@ -8,26 +8,33 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
+import kotlinx.serialization.Serializable
 import kotlin.math.max
 import kotlin.math.min
 
 const val MAX_COLUMNS = 10
 
+@Serializable
 data class GallerySettings(
     val numColumns: Int,
     val contentScaleEnum: ContentScaleEnum,
     val alignmentEnum: AlignmentEnum
 )
 
-class GalleryViewModel: ViewModel() {
+class GalleryViewModel : ViewModel() {
+//    private val sharedPreferences =
+//        context.getSharedPreferences("gallery_settings", Context.MODE_PRIVATE)
+
     init {
         log("GalleryViewModel init")
     }
 
-    val currentGallerySettings get() = GallerySettings(
-        numColumnsFlow.value,
-        imageContentScaleFlow.value,
-        alignmentFlow.value)
+    val currentGallerySettings
+        get() = GallerySettings(
+            numColumnsFlow.value,
+            imageContentScaleFlow.value,
+            alignmentFlow.value
+        )
 
     private val _numColumnsFlow = MutableStateFlow(3)
     val numColumnsFlow = _numColumnsFlow.asStateFlow()
@@ -50,4 +57,9 @@ class GalleryViewModel: ViewModel() {
         }
     }
 
+    fun applyGallerySettings(gallerySettings: GallerySettings) {
+        _numColumnsFlow.update { gallerySettings.numColumns }
+        updateImageContentScale(gallerySettings.contentScaleEnum)
+        updateAlignment(gallerySettings.alignmentEnum)
+    }
 }
