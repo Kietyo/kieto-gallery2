@@ -12,27 +12,21 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.listSaver
-import androidx.compose.runtime.saveable.mapSaver
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -45,22 +39,17 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
-import coil.ImageLoader
-import coil.request.ImageRequest
 import dagger.hilt.android.AndroidEntryPoint
+import dev.kietyo.scrap.compose.ImageSettingsContent
 import dev.kietyo.scrap.compose.FolderItem
-import dev.kietyo.scrap.compose.FolderItemWithAsyncImage
+import dev.kietyo.scrap.compose.GalleryViewV2
 import dev.kietyo.scrap.compose.Header
 import dev.kietyo.scrap.ui.theme.AndroidComposeTemplateTheme
-import kotlin.streams.toList
+import dev.kietyo.scrap.utils.STRING_ACTIVITY_RESULT
+import dev.kietyo.scrap.utils.toGalleryItem
+import dev.kietyo.scrap.viewmodels.GalleryViewModel
 import kotlin.time.ExperimentalTime
-import kotlin.time.measureTime
-import kotlin.time.measureTimedValue
 
-private val DocumentFile.isImage: Boolean
-    get() {
-        return type == "image/jpeg"
-    }
 const val REQUEST_CODE_SELECT_FOLDER = 100
 const val MY_PREFERENCES = "MyPreferences"
 const val PREFERENCE_SELECTED_FOLDER = "PREFERENCE_SELECTED_FOLDER"
@@ -68,6 +57,7 @@ private const val MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 10
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private val galleryViewModel: GalleryViewModel by viewModels()
 
     @RequiresApi(Build.VERSION_CODES.P)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,70 +72,37 @@ class MainActivity : ComponentActivity() {
             )
         }
 
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            log("Got activity result")
+            log(it.resultCode)
+            log(it.data?.getStringExtra(STRING_ACTIVITY_RESULT))
+        }
+
         setContent {
-            HelloWorldContent(contentResolver)
+            MainContent(galleryViewModel, contentResolver)
         }
     }
-}
 
-//val CitySaver = run {
-//    listSaver<GalleryItem, Any>(
-//        save = {
-//        this
-//    },
-//    restore = {
-//
-//    })
-//}
+}
 
 @OptIn(ExperimentalTime::class)
 @RequiresApi(Build.VERSION_CODES.P)
 @Composable
-fun HelloWorldContent(contentResolver: ContentResolver) {
+fun MainContent(
+    galleryViewModel: GalleryViewModel,
+    contentResolver: ContentResolver
+) {
     val context = LocalContext.current
-
     val datastore = context.getSharedPreferences(MY_PREFERENCES, Context.MODE_PRIVATE)
-
     val savedUri = datastore.getString(PREFERENCE_SELECTED_FOLDER, null)
 
     log("Received saved URI: $savedUri")
 
     var selectedFolder by remember { mutableStateOf(savedUri?.toUri()) }
-    var imageContentScale by remember { mutableStateOf(ContentScale.Fit) }
     var documentFile by remember {
         mutableStateOf(selectedFolder?.let {
             DocumentFile.fromTreeUri(context, it)
         })
-    }
-
-    val computeGalleryItems = {
-        log("Computing gallery items...")
-        documentFile?.let {
-            val timeToProcessGalleryItems = measureTimedValue {
-                it.listFiles().toList().parallelStream().filter { it.isDirectory }
-                    .map { directory ->
-                        val firstImageFileInDirectory = directory.listFiles().firstOrNull {
-                            it.isImage
-                        }
-                        if (firstImageFileInDirectory == null) {
-                            GalleryItem.Folder(directory.name!!)
-                        } else {
-                            GalleryItem.FolderWithAsyncImage(
-                                directory.name!!,
-                                ImageRequest.Builder(context)
-                                    .data(firstImageFileInDirectory.uri).build()
-                            )
-                        }
-                    }?.toList()
-            }
-            log("Time to process all folder items: ${timeToProcessGalleryItems.duration}")
-            timeToProcessGalleryItems.value
-
-        } ?: listOf()
-    }
-
-    var galleryItems by remember {
-        mutableStateOf(computeGalleryItems())
     }
 
     val openFolderLauncher = rememberLauncherForActivityResult(
@@ -184,36 +141,51 @@ fun HelloWorldContent(contentResolver: ContentResolver) {
                 //                    }
             }
 
-            galleryItems = computeGalleryItems()
+            //            galleryItems = computeGalleryItems()
         }
     }
 
-    val scrollState = ScrollState(0)
-
-    val contentScales = listOf(
-        ContentScaleSelection("Crop", ContentScale.Crop),
-        ContentScaleSelection("Fit", ContentScale.Fit),
-        ContentScaleSelection("Fill Height", ContentScale.FillHeight),
-        ContentScaleSelection("Fill Width", ContentScale.FillWidth),
-        ContentScaleSelection("Inside", ContentScale.Inside),
-        ContentScaleSelection("Fill Bounds", ContentScale.FillBounds),
-        ContentScaleSelection("None", ContentScale.None),
-    ).sortedBy { it.text }
-
-
     AndroidComposeTemplateTheme {
         Column {
-            Header(
-                contentScales.first(),
-                contentScales,
-                onLoaderFolderClick = {
-                openFolderLauncher.launch(null)
-            }, onContentScaleSelection = {
-                imageContentScale = it.contentScale
-            })
-            GalleryView(galleryItems, imageContentScale)
-        }
+            ExpandableHeader(galleryViewModel, openFolderLauncher)
 
+            documentFile?.let { file ->
+                val galleryItems = file.listFiles().map { it.toGalleryItem() }
+                GalleryViewV2(galleryViewModel, galleryItems)
+            }
+        }
+    }
+}
+
+@Composable
+fun ExpandableHeader(
+    galleryViewModel: GalleryViewModel,
+    openFolderLauncher: ActivityResultLauncher<Uri?>
+) {
+    var isSettingsOpen by remember {
+        mutableStateOf(false)
+    }
+    var currentGallerySettings = galleryViewModel.currentGallerySettings
+    if (isSettingsOpen) {
+        ImageSettingsContent(
+            galleryViewModel = galleryViewModel,
+            onSaveButtonClick = {
+                currentGallerySettings = galleryViewModel.currentGallerySettings
+                isSettingsOpen = false
+            },
+            onCancelButtonClick = {
+                galleryViewModel.applyGallerySettings(currentGallerySettings)
+                isSettingsOpen = false
+            }
+        )
+    } else {
+        Header(
+            onLoaderFolderClick = {
+                openFolderLauncher.launch(null)
+            }
+        ) {
+            isSettingsOpen = true
+        }
     }
 }
 
@@ -224,33 +196,6 @@ data class ContentScaleSelection(
 
 fun log(content: Any?) {
     Log.d("KietHere", content.toString())
-}
-
-@Composable
-fun GalleryView(
-    galleryItems: List<GalleryItem>,
-    defaultImageContentScale: ContentScale,
-) {
-    //    val scrollState = ScrollState(0)
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
-        modifier = Modifier
-            .background(Color.Black)
-        //            .verticalScroll(scrollState)
-    ) {
-        galleryItems.forEach {
-            item {
-                when (it) {
-                    is GalleryItem.Folder -> FolderItem(item = it)
-                    is GalleryItem.Image -> TODO()
-                    is GalleryItem.FolderWithAsyncImage -> FolderItemWithAsyncImage(
-                        item = it,
-                        imageContentScale = defaultImageContentScale
-                    )
-                }
-            }
-        }
-    }
 }
 
 //@Preview

@@ -22,4 +22,9 @@ sealed class GalleryItem {
     ) : GalleryItem()
 
     data class Image(val imageBitmap: ImageBitmap) : GalleryItem()
+
+    data class ExampleImage(
+        val exampleFolderName: String,
+        val exampleImage: Int
+    ) : GalleryItem()
 }
