@@ -39,6 +39,10 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import dagger.hilt.android.AndroidEntryPoint
 import dev.kietyo.scrap.compose.ImageSettingsContent
 import dev.kietyo.scrap.compose.FolderItem
@@ -57,7 +61,14 @@ private const val MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 10
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private val galleryViewModel: GalleryViewModel by viewModels()
+
+    val factory = viewModelFactory {
+        initializer {
+            GalleryViewModel(baseContext.getSharedPreferences("gallery_settings", MODE_PRIVATE))
+        }
+    }
+
+    private val galleryViewModel: GalleryViewModel by viewModels(factoryProducer = { factory })
 
     @RequiresApi(Build.VERSION_CODES.P)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -171,6 +182,7 @@ fun ExpandableHeader(
             galleryViewModel = galleryViewModel,
             onSaveButtonClick = {
                 currentGallerySettings = galleryViewModel.currentGallerySettings
+                galleryViewModel.applyGallerySettings(currentGallerySettings)
                 isSettingsOpen = false
             },
             onCancelButtonClick = {

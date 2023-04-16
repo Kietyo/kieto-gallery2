@@ -61,3 +61,7 @@ enum class AlignmentEnum(
 }
 
 val alignments = AlignmentEnum.values().toList()
+
+object SharedPreferencesKeys {
+    val GALLERY_SETTINGS = "gallery_settings"
+}
