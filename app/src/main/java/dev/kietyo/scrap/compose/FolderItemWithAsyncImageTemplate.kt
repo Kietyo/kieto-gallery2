@@ -39,7 +39,7 @@ fun FolderItemWithAsyncImageTemplate(
             modifier = Modifier.fillMaxWidth()
                 .align(Alignment.Center),
             loading = {
-                CircularProgressIndicator()
+                CircularProgressIndicator(modifier = Modifier.fillMaxSize())
             }
         )
         Text(

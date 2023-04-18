@@ -40,6 +40,9 @@ import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import coil.ImageLoader
+import coil.ImageLoaderFactory
+import coil.disk.DiskCache
 import dagger.hilt.android.AndroidEntryPoint
 import dev.kietyo.scrap.compose.ExpandableHeader
 import dev.kietyo.scrap.compose.FolderItem
@@ -112,6 +115,7 @@ fun MainContent(
     val datastore = context.getSharedPreferences(MY_PREFERENCES, Context.MODE_PRIVATE)
     val savedUri = datastore.getString(PREFERENCE_SELECTED_FOLDER, null)
 
+    log("Cache dir: ${context.cacheDir}")
     log("Received saved URI: $savedUri")
 
     var selectedFolder by remember { mutableStateOf(savedUri?.toUri()) }
