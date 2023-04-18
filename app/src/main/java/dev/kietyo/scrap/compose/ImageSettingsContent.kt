@@ -15,7 +15,7 @@ import dev.kietyo.scrap.viewmodels.GalleryViewModel
 fun ImageSettingsContent(
     galleryViewModel: GalleryViewModel,
     onColumnChange: (Int) -> Unit = {},
-    onSaveButtonClick: (String) -> Unit = {},
+    onSaveButtonClick: () -> Unit = {},
     onCancelButtonClick: () -> Unit = {}
 ) {
     Column {
@@ -60,7 +60,7 @@ fun ImageSettingsContent(
                 Text(text = "Cancel")
             }
             TextButton(
-                onClick = { onSaveButtonClick("") }) {
+                onClick = { onSaveButtonClick() }) {
                 Text(text = "Save")
             }
         }

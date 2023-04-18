@@ -28,14 +28,16 @@ data class GallerySettings(
     val alignmentEnum: AlignmentEnum
 )
 
-class GalleryViewModel(private val sharedPreferences: SharedPreferences) : ViewModel() {
-    private val gallerySettings =
+class GalleryViewModel(
+    private val sharedPreferences: SharedPreferences,
+    gallerySettings: GallerySettings =
         sharedPreferences.getString(SharedPreferencesKeys.GALLERY_SETTINGS, null)?.let {
             Json.decodeFromString(it)
         }
             ?: GallerySettings(
                 3, ContentScaleEnum.CROP, AlignmentEnum.CENTER
             )
+) : ViewModel() {
 
     init {
         log("GalleryViewModel init: $gallerySettings")
@@ -80,4 +82,6 @@ class GalleryViewModel(private val sharedPreferences: SharedPreferences) : ViewM
             )
         }
     }
+
+
 }

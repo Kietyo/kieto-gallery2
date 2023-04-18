@@ -4,7 +4,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.ContentScale
 import androidx.documentfile.provider.DocumentFile
 import coil.request.ImageRequest
-import dev.kietyo.scrap.ContentScaleSelection
 import dev.kietyo.scrap.GalleryItem
 import dev.kietyo.scrap.di.MyApplication
 

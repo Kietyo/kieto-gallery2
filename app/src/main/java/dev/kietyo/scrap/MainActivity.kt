@@ -12,7 +12,6 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
@@ -39,20 +38,18 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import dagger.hilt.android.AndroidEntryPoint
-import dev.kietyo.scrap.compose.ImageSettingsContent
+import dev.kietyo.scrap.compose.ExpandableHeader
 import dev.kietyo.scrap.compose.FolderItem
 import dev.kietyo.scrap.compose.GalleryViewV2
-import dev.kietyo.scrap.compose.Header
 import dev.kietyo.scrap.ui.theme.AndroidComposeTemplateTheme
 import dev.kietyo.scrap.utils.STRING_ACTIVITY_RESULT
 import dev.kietyo.scrap.utils.toGalleryItem
 import dev.kietyo.scrap.viewmodels.GalleryViewModel
 import kotlin.time.ExperimentalTime
+import kotlin.time.measureTimedValue
 
 const val REQUEST_CODE_SELECT_FOLDER = 100
 const val MY_PREFERENCES = "MyPreferences"
@@ -161,50 +158,19 @@ fun MainContent(
             ExpandableHeader(galleryViewModel, openFolderLauncher)
 
             documentFile?.let { file ->
-                val galleryItems = file.listFiles().map { it.toGalleryItem() }
-                GalleryViewV2(galleryViewModel, galleryItems)
+                val listFiles = measureTimedValue {
+                    file.listFiles()
+                }
+                log("Time to list files:  ${listFiles.duration}")
+                val galleryItems = measureTimedValue {
+                    listFiles.value.map { it.toGalleryItem() }
+                }
+                log("Time to get gallery items: ${galleryItems.duration}")
+                GalleryViewV2(galleryViewModel, galleryItems.value)
             }
         }
     }
 }
-
-@Composable
-fun ExpandableHeader(
-    galleryViewModel: GalleryViewModel,
-    openFolderLauncher: ActivityResultLauncher<Uri?>
-) {
-    var isSettingsOpen by remember {
-        mutableStateOf(false)
-    }
-    var currentGallerySettings = galleryViewModel.currentGallerySettings
-    if (isSettingsOpen) {
-        ImageSettingsContent(
-            galleryViewModel = galleryViewModel,
-            onSaveButtonClick = {
-                currentGallerySettings = galleryViewModel.currentGallerySettings
-                galleryViewModel.applyGallerySettings(currentGallerySettings)
-                isSettingsOpen = false
-            },
-            onCancelButtonClick = {
-                galleryViewModel.applyGallerySettings(currentGallerySettings)
-                isSettingsOpen = false
-            }
-        )
-    } else {
-        Header(
-            onLoaderFolderClick = {
-                openFolderLauncher.launch(null)
-            }
-        ) {
-            isSettingsOpen = true
-        }
-    }
-}
-
-data class ContentScaleSelection(
-    val text: String,
-    val contentScale: ContentScale
-)
 
 fun log(content: Any?) {
     Log.d("KietHere", content.toString())

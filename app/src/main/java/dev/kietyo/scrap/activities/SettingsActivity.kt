@@ -78,7 +78,7 @@ class SettingsActivity : ComponentActivity() {
 fun SettingsContent(
     settingsViewModel: SettingsViewModel,
     galleryViewModel: GalleryViewModel,
-    onSaveButtonClick: (String) -> Unit
+    onSaveButtonClick: () -> Unit
 ) {
     Column {
         Row {
@@ -90,7 +90,7 @@ fun SettingsContent(
                 currentText = it
             })
             TextButton(
-                onClick = { onSaveButtonClick(currentText) }) {
+                onClick = { onSaveButtonClick() }) {
                 Text(text = "Save")
             }
         }
