@@ -46,8 +46,8 @@ import dev.kietyo.scrap.compose.FolderItem
 import dev.kietyo.scrap.compose.GalleryViewV2
 import dev.kietyo.scrap.ui.theme.AndroidComposeTemplateTheme
 import dev.kietyo.scrap.utils.STRING_ACTIVITY_RESULT
-import dev.kietyo.scrap.utils.toGalleryItem
 import dev.kietyo.scrap.viewmodels.GalleryViewModel
+import java.util.concurrent.Executors
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTimedValue
 
@@ -58,10 +58,14 @@ private const val MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 10
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    var executorService = Executors.newFixedThreadPool(4)
 
     val factory = viewModelFactory {
         initializer {
-            GalleryViewModel(baseContext.getSharedPreferences("gallery_settings", MODE_PRIVATE))
+            GalleryViewModel(
+                baseContext.getSharedPreferences("gallery_settings", MODE_PRIVATE),
+                executorService
+            )
         }
     }
 
@@ -79,6 +83,10 @@ class MainActivity : ComponentActivity() {
                 MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE
             )
         }
+
+        val NUMBER_OF_CORES = Runtime.getRuntime().availableProcessors()
+
+        log("Num available cores: $NUMBER_OF_CORES")
 
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             log("Got activity result")
@@ -159,14 +167,14 @@ fun MainContent(
 
             documentFile?.let { file ->
                 val listFiles = measureTimedValue {
-                    file.listFiles()
+                    file.listFiles().filter {
+                        it.isDirectory
+                    }
                 }
                 log("Time to list files:  ${listFiles.duration}")
-                val galleryItems = measureTimedValue {
-                    listFiles.value.map { it.toGalleryItem() }
-                }
-                log("Time to get gallery items: ${galleryItems.duration}")
-                GalleryViewV2(galleryViewModel, galleryItems.value)
+                galleryViewModel.updateCurrentFiles(listFiles.value)
+
+                GalleryViewV2(galleryViewModel)
             }
         }
     }

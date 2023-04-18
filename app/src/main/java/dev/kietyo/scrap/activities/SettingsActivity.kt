@@ -74,6 +74,7 @@ class SettingsActivity : ComponentActivity() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.N)
 @Composable
 fun SettingsContent(
     settingsViewModel: SettingsViewModel,
@@ -131,7 +132,6 @@ fun SettingsContent(
 
         GalleryViewV2(
             galleryViewModel = galleryViewModel,
-            galleryItems = exampleImages
         )
     }
 }
