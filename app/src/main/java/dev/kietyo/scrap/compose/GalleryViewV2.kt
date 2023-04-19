@@ -12,14 +12,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.currentComposer
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -29,16 +22,15 @@ import androidx.documentfile.provider.DocumentFile
 import dev.kietyo.scrap.GalleryItem
 import dev.kietyo.scrap.R
 import dev.kietyo.scrap.log
-import dev.kietyo.scrap.utils.toGalleryItem
 import dev.kietyo.scrap.viewmodels.GalleryViewModel
-import kotlinx.coroutines.launch
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @RequiresApi(Build.VERSION_CODES.N)
 @Composable
 fun GalleryViewV2(
     galleryViewModel: GalleryViewModel,
-) {
+    onImageClick: () -> Unit,
+    ) {
     val numColumns = galleryViewModel.numColumnsFlow.collectAsState()
     log("Executing GalleryViewV2")
     var gridSize = IntSize(0, 0)
@@ -79,7 +71,7 @@ fun GalleryViewV2(
         log("LazyVerticalGrid: gridSize: ${gridSize}")
         galleryViewModel.currentFiles.value.forEach { documentFile ->
             item {
-                GalleryItemWrapper(galleryViewModel, documentFile)
+                GalleryItemWrapper(galleryViewModel, documentFile, onImageClick)
             }
         }
     }
@@ -92,8 +84,12 @@ val exampleImages = listOf(
 )
 
 @Composable
-fun GalleryItemWrapper(galleryViewModel: GalleryViewModel, documentFile: DocumentFile) {
-    val galleryItem = galleryViewModel.fileToGalleryItemCacheV2.get(documentFile)!!
+fun GalleryItemWrapper(
+    galleryViewModel: GalleryViewModel,
+    documentFile: DocumentFile,
+    onImageClick: () -> Unit
+) {
+    val galleryItem = galleryViewModel.fileToGalleryItemCacheV2[documentFile]!!
     log("GalleryItemWrapper: loading $documentFile")
     if (galleryItem.value == null) {
         Box(
@@ -112,6 +108,7 @@ fun GalleryItemWrapper(galleryViewModel: GalleryViewModel, documentFile: Documen
             is GalleryItem.FolderWithAsyncImage -> FolderItemWithAsyncImage(
                 galleryViewModel,
                 item = it,
+                onImageClick
             )
 
             is GalleryItem.ExampleImage -> ExampleFolderItemWithImage(

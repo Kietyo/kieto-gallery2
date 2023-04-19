@@ -1,18 +1,26 @@
 package dev.kietyo.scrap.viewmodels
 
+import android.app.Application
 import android.content.SharedPreferences
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.edit
 import androidx.documentfile.provider.DocumentFile
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dev.kietyo.scrap.GalleryItem
+import dev.kietyo.scrap.di.MyApplication
 import dev.kietyo.scrap.log
 import dev.kietyo.scrap.utils.AlignmentEnum
 import dev.kietyo.scrap.utils.ContentScaleEnum
 import dev.kietyo.scrap.utils.SharedPreferencesKeys
 import dev.kietyo.scrap.utils.toGalleryItem
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,6 +46,7 @@ data class GallerySettings(
 )
 
 class GalleryViewModel(
+    private val application: Application,
     private val sharedPreferences: SharedPreferences,
     private val executorService: ExecutorService,
     gallerySettings: GallerySettings =
@@ -47,13 +56,19 @@ class GalleryViewModel(
             ?: GallerySettings(
                 3, ContentScaleEnum.CROP, AlignmentEnum.CENTER
             )
-) : ViewModel() {
+) : AndroidViewModel(application) {
+
+
+    private val ioScope = CoroutineScope(Dispatchers.IO)
+
     val dispatcher = executorService.asCoroutineDispatcher()
 
     private var _currentFiles = MutableStateFlow(listOf<DocumentFile>())
     val currentFiles = _currentFiles.asStateFlow()
     val fileToGalleryItemCacheV2 = ConcurrentHashMap<DocumentFile, MutableState<GalleryItem?>>()
+    var loadImagesJob: Job? = null
 
+    @OptIn(DelicateCoroutinesApi::class)
     fun updateCurrentFiles(newCurrentFiles: List<DocumentFile>) {
         _currentFiles.update {
             newCurrentFiles
@@ -63,7 +78,7 @@ class GalleryViewModel(
             fileToGalleryItemCacheV2[it] = mutableStateOf(null)
         }
 
-        GlobalScope.launch(dispatcher) {
+        loadImagesJob = ioScope.launch(dispatcher) {
             newCurrentFiles.forEach {
                 fileToGalleryItemCacheV2[it]!!.value = it.toGalleryItem()
             }

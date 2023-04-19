@@ -2,15 +2,11 @@ package dev.kietyo.scrap
 
 import android.Manifest
 import android.content.ContentResolver
-import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -18,55 +14,47 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material.Button
+import androidx.compose.material.Text
+import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.edit
-import androidx.core.net.toUri
-import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import coil.ImageLoader
-import coil.ImageLoaderFactory
-import coil.disk.DiskCache
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
-import dev.kietyo.scrap.compose.ExpandableHeader
 import dev.kietyo.scrap.compose.FolderItem
-import dev.kietyo.scrap.compose.GalleryViewV2
-import dev.kietyo.scrap.ui.theme.AndroidComposeTemplateTheme
+import dev.kietyo.scrap.compose.GalleryView
+import dev.kietyo.scrap.utils.NavDestinations
 import dev.kietyo.scrap.utils.STRING_ACTIVITY_RESULT
+import dev.kietyo.scrap.utils.SharedPreferencesDbs
 import dev.kietyo.scrap.viewmodels.GalleryViewModel
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import kotlin.time.ExperimentalTime
-import kotlin.time.measureTimedValue
 
 const val REQUEST_CODE_SELECT_FOLDER = 100
-const val MY_PREFERENCES = "MyPreferences"
-const val PREFERENCE_SELECTED_FOLDER = "PREFERENCE_SELECTED_FOLDER"
 private const val MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 10
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    var executorService = Executors.newFixedThreadPool(4)
+    private var executorService: ExecutorService = Executors.newFixedThreadPool(4)
 
-    val factory = viewModelFactory {
+    private val factory = viewModelFactory {
         initializer {
             GalleryViewModel(
-                baseContext.getSharedPreferences("gallery_settings", MODE_PRIVATE),
+                application,
+                baseContext.getSharedPreferences(SharedPreferencesDbs.GALLERY, MODE_PRIVATE),
                 executorService
             )
         }
@@ -97,88 +85,33 @@ class MainActivity : ComponentActivity() {
             log(it.data?.getStringExtra(STRING_ACTIVITY_RESULT))
         }
 
+
         setContent {
-            MainContent(galleryViewModel, contentResolver)
+            MainScreen(galleryViewModel, contentResolver)
         }
     }
 
 }
 
-@OptIn(ExperimentalTime::class)
 @RequiresApi(Build.VERSION_CODES.P)
 @Composable
-fun MainContent(
-    galleryViewModel: GalleryViewModel,
-    contentResolver: ContentResolver
-) {
-    val context = LocalContext.current
-    val datastore = context.getSharedPreferences(MY_PREFERENCES, Context.MODE_PRIVATE)
-    val savedUri = datastore.getString(PREFERENCE_SELECTED_FOLDER, null)
+fun MainScreen(galleryViewModel: GalleryViewModel, contentResolver: ContentResolver) {
+    val navController = rememberNavController()
 
-    log("Cache dir: ${context.cacheDir}")
-    log("Received saved URI: $savedUri")
-
-    var selectedFolder by remember { mutableStateOf(savedUri?.toUri()) }
-    var documentFile by remember {
-        mutableStateOf(selectedFolder?.let {
-            DocumentFile.fromTreeUri(context, it)
-        })
-    }
-
-    val openFolderLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocumentTree()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            log("Updating folder...")
-            contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            selectedFolder = uri
-            selectedFolder?.let { uri ->
-                log("kiet here")
-                log("Selected path: $uri")
-                log("uri.path: ${uri.path}")
-                log("uri.encodedPath: ${uri.encodedPath}")
+    NavHost(navController = navController, startDestination = NavDestinations.GALLERY) {
+        log("navController.currentDestination: ${navController.currentDestination}")
+        composable(NavDestinations.GALLERY) {
+            GalleryView(galleryViewModel, contentResolver) {
+                log("Navigating the image destination...")
+                galleryViewModel.loadImagesJob?.cancel()
+                log("Load images job cancelled...")
+                navController.navigate(NavDestinations.IMAGES)
             }
-
-            datastore.edit {
-                this.putString(PREFERENCE_SELECTED_FOLDER, uri.toString())
-            }
-
-            documentFile = DocumentFile.fromTreeUri(context, uri)
-            documentFile?.let { file ->
-                log(file.name)
-                log(file.type)
-                log("Is file: ${file.isFile}")
-                log("Is directory: ${file.isDirectory}")
-
-                //                    log("Files inside directory:")
-                //                    file.listFiles().forEach {
-                //                        log("${it.name}, isFile: ${it.isFile}, ${it.uri.path}")
-                //                        if (it.isDirectory) {
-                //                            it.listFiles().forEach { childFile ->
-                //                                log("\t${childFile.name}, isFile: ${childFile.isFile}, childFile.getType(): ${childFile.getType()}, ${childFile.uri.path}")
-                //                            }
-                //                        }
-                //                    }
-            }
-
-            //            galleryItems = computeGalleryItems()
         }
-    }
-
-    AndroidComposeTemplateTheme {
-        Column {
-            ExpandableHeader(galleryViewModel, openFolderLauncher)
-
-            documentFile?.let { file ->
-                val listFiles = measureTimedValue {
-                    file.listFiles().filter {
-                        it.isDirectory
-                    }
-                }
-                log("Time to list files:  ${listFiles.duration}")
-                galleryViewModel.updateCurrentFiles(listFiles.value)
-
-                GalleryViewV2(galleryViewModel)
+        composable(NavDestinations.IMAGES) {
+            Text(text = "Hello world!")
+            TextButton(onClick = { navController.navigate(NavDestinations.GALLERY) }) {
+                Text(text = "Go back")
             }
         }
     }

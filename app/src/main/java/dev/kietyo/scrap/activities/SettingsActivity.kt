@@ -132,6 +132,7 @@ fun SettingsContent(
 
         GalleryViewV2(
             galleryViewModel = galleryViewModel,
+            onImageClick = {},
         )
     }
 }

@@ -61,6 +61,16 @@ enum class AlignmentEnum(
 
 val alignments = AlignmentEnum.values().toList()
 
+object SharedPreferencesDbs {
+    const val GALLERY = "gallery"
+}
+
 object SharedPreferencesKeys {
-    val GALLERY_SETTINGS = "gallery_settings"
+    const val GALLERY_SETTINGS = "gallery_settings"
+    const val SELECTED_FOLDER = "selected_folder"
+}
+
+object NavDestinations {
+    const val GALLERY = "gallery"
+    const val IMAGES = "images"
 }
