@@ -1,7 +1,6 @@
 package dev.kietyo.scrap
 
 import android.Manifest
-import android.content.ContentResolver
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -17,7 +16,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
@@ -85,9 +83,11 @@ class MainActivity : ComponentActivity() {
             log(it.data?.getStringExtra(STRING_ACTIVITY_RESULT))
         }
 
+        log("Cache dir: ${baseContext.cacheDir}")
+
 
         setContent {
-            MainScreen(galleryViewModel, contentResolver)
+            MainScreen(galleryViewModel)
         }
     }
 
@@ -95,13 +95,13 @@ class MainActivity : ComponentActivity() {
 
 @RequiresApi(Build.VERSION_CODES.P)
 @Composable
-fun MainScreen(galleryViewModel: GalleryViewModel, contentResolver: ContentResolver) {
+fun MainScreen(galleryViewModel: GalleryViewModel) {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = NavDestinations.GALLERY) {
         log("navController.currentDestination: ${navController.currentDestination}")
         composable(NavDestinations.GALLERY) {
-            GalleryView(galleryViewModel, contentResolver) {
+            GalleryView(galleryViewModel) {
                 log("Navigating the image destination...")
                 galleryViewModel.loadImagesJob?.cancel()
                 log("Load images job cancelled...")
