@@ -1,6 +1,7 @@
 package dev.kietyo.scrap.compose
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -17,13 +18,15 @@ import androidx.compose.ui.unit.sp
 import dev.kietyo.scrap.GalleryItem
 
 @Composable
-fun FolderItem(item: GalleryItem.Folder) {
+fun FolderItem(item: GalleryItem.Folder, onImageClick: () -> Unit) {
     Box(
         modifier = Modifier
             .aspectRatio(1.0f)
             .background(Color.Black)
             .fillMaxSize()
-            .padding(3.dp),
+            .clickable {
+                onImageClick()
+            },
         contentAlignment = Alignment.BottomStart
     ) {
         Box(
@@ -33,13 +36,21 @@ fun FolderItem(item: GalleryItem.Folder) {
                 .fillMaxHeight()
                 .background(Color.DarkGray)
         ) {
-            val text = item.folderName
             Text(
-                text = text,
+                text = item.folderName,
                 fontSize = 10.sp,
                 color = Color.White,
                 modifier = Modifier.align(Alignment.BottomStart)
             )
         }
     }
+}
+
+@Composable
+fun FolderItemV2(item: GalleryItem.Folder, onImageClick: () -> Unit) {
+    FolderItemWithAsyncImageTemplate(
+        FolderItemData.NoImage,
+        item.folderName,
+        onImageClick
+    )
 }

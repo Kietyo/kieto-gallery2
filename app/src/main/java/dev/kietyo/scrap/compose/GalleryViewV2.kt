@@ -23,6 +23,8 @@ import dev.kietyo.scrap.GalleryItem
 import dev.kietyo.scrap.R
 import dev.kietyo.scrap.log
 import dev.kietyo.scrap.viewmodels.GalleryViewModel
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.forEach
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @RequiresApi(Build.VERSION_CODES.N)
@@ -30,31 +32,13 @@ import dev.kietyo.scrap.viewmodels.GalleryViewModel
 fun GalleryViewV2(
     galleryViewModel: GalleryViewModel,
     onImageClick: () -> Unit,
-    ) {
+) {
     val numColumns = galleryViewModel.numColumnsFlow.collectAsState()
     log("Executing GalleryViewV2")
     var gridSize = IntSize(0, 0)
-//    val coroutineScope = rememberCoroutineScope()
-
-//    coroutineScope.launch {
-//        log("Launching effect...")
-//        galleryViewModel.currentFiles.forEach {documentFile ->
-//            galleryViewModel.fileToGalleryItemCacheV2.getOrPut(documentFile) {
-//                mutableStateOf(documentFile.toGalleryItem())
-//            }
-//            log("Computed gallery item for $documentFile")
-//        }
-//    }
-
-//    LaunchedEffect(key1 = true) {
-//        galleryViewModel.currentFiles.forEach {documentFile ->
-//            galleryViewModel.fileToGalleryItemCacheV2.getOrPut(documentFile) {
-//                mutableStateOf(documentFile.toGalleryItem())
-//            }
-//        }
-//    }
 
     log("Loading grid...")
+    val files = galleryViewModel.listFiles.collectAsState(initial = emptyList())
     LazyVerticalGrid(
         columns = GridCells.Fixed(numColumns.value),
         verticalArrangement = Arrangement.spacedBy(2.dp),
@@ -69,7 +53,7 @@ fun GalleryViewV2(
     ) {
 
         log("LazyVerticalGrid: gridSize: ${gridSize}")
-        galleryViewModel.currentFiles.value.forEach { documentFile ->
+        files.value.forEach { documentFile ->
             item {
                 GalleryItemWrapper(galleryViewModel, documentFile, onImageClick)
             }
@@ -103,7 +87,7 @@ fun GalleryItemWrapper(
     } else {
         val it = galleryItem.value!!
         when (it) {
-            is GalleryItem.Folder -> FolderItem(item = it)
+            is GalleryItem.Folder -> FolderItem(item = it, {})
             is GalleryItem.Image -> TODO()
             is GalleryItem.FolderWithAsyncImage -> FolderItemWithAsyncImage(
                 galleryViewModel,

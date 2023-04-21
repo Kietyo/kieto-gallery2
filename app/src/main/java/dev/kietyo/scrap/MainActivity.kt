@@ -134,7 +134,7 @@ fun log(content: Any?) {
 @Preview
 @Composable
 fun FolderItemPreview() {
-    FolderItem(GalleryItem.Folder("Hello world how are you today."))
+    FolderItem(GalleryItem.Folder("Hello world how are you today."), {})
 }
 
 @Composable

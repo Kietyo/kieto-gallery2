@@ -14,10 +14,12 @@ fun FolderItemWithAsyncImage(
     val myImageContentScale = galleryViewModel.imageContentScaleFlow.collectAsState()
     val alignmentState = galleryViewModel.alignmentFlow.collectAsState()
     FolderItemWithAsyncImageTemplate(
-        model = item.imageRequest,
+        FolderItemData.WithImage(
+            item.imageRequest,
+            myImageContentScale,
+            alignmentState
+        ),
         folderName = item.folderName,
-        contentScaleState = myImageContentScale,
-        alignmentState = alignmentState,
         onImageClick = onImageClick,
     )
 }

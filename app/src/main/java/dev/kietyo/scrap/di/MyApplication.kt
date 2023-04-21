@@ -2,9 +2,11 @@
 package dev.kietyo.scrap.di
 
 import android.content.Context
+import android.graphics.Bitmap
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.disk.DiskCache
+import coil.memory.MemoryCache
 import dagger.hilt.android.HiltAndroidApp
 import dev.kietyo.scrap.BaseApplication
 import dev.kietyo.scrap.log
@@ -28,6 +30,11 @@ open class MyApplication: BaseApplication(), ImageLoaderFactory {
             .diskCache {
                 DiskCache.Builder()
                     .directory(applicationContext.cacheDir.resolve("image_cache"))
+                    .maxSizePercent(0.2)
+                    .build()
+            }
+            .memoryCache {
+                MemoryCache.Builder(applicationContext)
                     .maxSizePercent(0.2)
                     .build()
             }

@@ -5,7 +5,10 @@ import android.content.ContentResolver
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.edit
 import androidx.core.net.toUri
@@ -32,6 +35,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
@@ -67,6 +71,8 @@ class GalleryViewModel(
                 3, ContentScaleEnum.CROP, AlignmentEnum.CENTER
             )
 ) : AndroidViewModel(application) {
+    private val ioScope = CoroutineScope(Dispatchers.IO)
+    private val dispatcher = executorService.asCoroutineDispatcher()
     private val contentResolver: ContentResolver = application.contentResolver
 
     private val _selectedFolder = MutableStateFlow(
@@ -81,21 +87,6 @@ class GalleryViewModel(
             DocumentFile.fromTreeUri(application.baseContext, it)
         }?.apply {
             log("document file name: $name, type: $type, is file: $isFile, is directory: $isDirectory")
-        }
-    }
-
-    @OptIn(ExperimentalTime::class)
-    val listFiles = documentFile.map { file ->
-        if (file == null) {
-            emptyList<DocumentFile>()
-        } else {
-            val listFiles = measureTimedValue {
-                file.listFiles().filter {
-                    it.isDirectory
-                }
-            }
-            log("Time to list files:  ${listFiles.duration}")
-            listFiles.value
         }
     }
 
@@ -118,29 +109,35 @@ class GalleryViewModel(
         log("Received saved URI: ${_selectedFolder.value}")
     }
 
-    private val ioScope = CoroutineScope(Dispatchers.IO)
-
-    private val dispatcher = executorService.asCoroutineDispatcher()
-
-    private val _currentFiles = MutableStateFlow(listOf<DocumentFile>())
-    val currentFiles = _currentFiles.asStateFlow()
     val fileToGalleryItemCacheV2 = ConcurrentHashMap<DocumentFile, MutableState<GalleryItem?>>()
     var loadImagesJob: Job? = null
 
-    @OptIn(DelicateCoroutinesApi::class)
-    fun updateCurrentFiles(newCurrentFiles: List<DocumentFile>) {
-        _currentFiles.update {
-            newCurrentFiles
-        }
+    @RequiresApi(Build.VERSION_CODES.N)
+    @OptIn(ExperimentalTime::class, ExperimentalCoroutinesApi::class)
+    val listFiles = documentFile.mapLatest { file ->
+        if (file == null) {
+            emptyList<DocumentFile>()
+        } else {
+            val listFiles = measureTimedValue {
+                val filteredFiles = file.listFiles().asSequence().filter {
+                    it.isDirectory
+                }.map {
+                    fileToGalleryItemCacheV2.computeIfAbsent(it) {
+                        mutableStateOf(null)
+                    }
+                    it
+                }.toList()
 
-        newCurrentFiles.forEach {
-            fileToGalleryItemCacheV2[it] = mutableStateOf(null)
-        }
+                loadImagesJob = ioScope.launch(dispatcher) {
+                    filteredFiles.forEach {
+                        fileToGalleryItemCacheV2[it]!!.value = it.toGalleryItem()
+                    }
+                }
 
-        loadImagesJob = ioScope.launch(dispatcher) {
-            newCurrentFiles.forEach {
-                fileToGalleryItemCacheV2[it]!!.value = it.toGalleryItem()
+                filteredFiles
             }
+            log("Time to list files:  ${listFiles.duration}")
+            listFiles.value
         }
     }
 

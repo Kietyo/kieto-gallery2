@@ -18,12 +18,19 @@ import coil.compose.SubcomposeAsyncImage
 import dev.kietyo.scrap.utils.AlignmentEnum
 import dev.kietyo.scrap.utils.ContentScaleEnum
 
+sealed class FolderItemData {
+    data class WithImage(
+        val model: Any,
+        val contentScaleState: State<ContentScaleEnum>,
+        val alignmentState: State<AlignmentEnum>,
+    ): FolderItemData()
+    object NoImage: FolderItemData()
+}
+
 @Composable
 fun FolderItemWithAsyncImageTemplate(
-    model: Any,
+    data: FolderItemData,
     folderName: String,
-    contentScaleState: State<ContentScaleEnum>,
-    alignmentState: State<AlignmentEnum>,
     onImageClick: () -> Unit
 ) {
     Box(
@@ -35,17 +42,21 @@ fun FolderItemWithAsyncImageTemplate(
                 onImageClick()
             }
     ) {
-        SubcomposeAsyncImage(
-            model = model,
-            contentDescription = "a pic",
-            contentScale = contentScaleState.value.contentScale,
-            alignment = alignmentState.value.alignment,
-            modifier = Modifier.fillMaxWidth()
-                .align(Alignment.Center),
-            loading = {
-                CircularProgressIndicator(modifier = Modifier.fillMaxSize())
-            }
-        )
+        when (data) {
+            is FolderItemData.WithImage -> SubcomposeAsyncImage(
+                model = data.model,
+                contentDescription = "a pic",
+                contentScale = data.contentScaleState.value.contentScale,
+                alignment = data.alignmentState.value.alignment,
+                modifier = Modifier.fillMaxWidth()
+                    .align(Alignment.Center),
+                loading = {
+                    CircularProgressIndicator(modifier = Modifier.fillMaxSize())
+                }
+            )
+            FolderItemData.NoImage -> Unit
+        }
+
         Text(
             text = folderName,
             fontSize = 10.sp,
