@@ -4,38 +4,33 @@ import android.app.Application
 import android.content.ContentResolver
 import android.content.Intent
 import android.content.SharedPreferences
+import android.database.Cursor
 import android.net.Uri
 import android.os.Build
+import android.provider.DocumentsContract
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
+import androidx.documentfile.provider.TreeDocumentFile
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import dev.kietyo.scrap.GalleryItem
-import dev.kietyo.scrap.di.MyApplication
 import dev.kietyo.scrap.log
 import dev.kietyo.scrap.utils.AlignmentEnum
 import dev.kietyo.scrap.utils.ContentScaleEnum
 import dev.kietyo.scrap.utils.SharedPreferencesKeys
 import dev.kietyo.scrap.utils.toGalleryItem
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
-import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
@@ -43,6 +38,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import okhttp3.internal.closeQuietly
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import kotlin.math.max
@@ -112,6 +108,44 @@ class GalleryViewModel(
     val fileToGalleryItemCacheV2 = ConcurrentHashMap<DocumentFile, MutableState<GalleryItem?>>()
     var loadImagesJob: Job? = null
 
+    fun DocumentFile.fastListFiles() {
+        val resolver: ContentResolver = contentResolver
+        val mUri = uri
+        val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
+            uri,
+            DocumentsContract.getDocumentId(uri)
+        )
+        val results = ArrayList<Uri>()
+
+        var c: Cursor? = null
+        try {
+            c = resolver.query(
+                childrenUri, arrayOf(
+                    DocumentsContract.Document.COLUMN_DOCUMENT_ID
+                ), null, null, null
+            )
+            while (c!!.moveToNext()) {
+                val documentId = c!!.getString(0)
+                val documentUri = DocumentsContract.buildDocumentUriUsingTree(
+                    mUri,
+                    documentId
+                )
+                results.add(documentUri)
+            }
+        } catch (e: Exception) {
+            log("Failed query: $e")
+        } finally {
+            c?.closeQuietly()
+        }
+
+        val result = results.toTypedArray()
+        val resultFiles = arrayOfNulls<DocumentFile>(result.size)
+        for (i in result.indices) {
+            resultFiles[i] = TreeDocumentFile(this, mContext, result[i])
+        }
+        return resultFiles
+    }
+
     @RequiresApi(Build.VERSION_CODES.N)
     @OptIn(ExperimentalTime::class, ExperimentalCoroutinesApi::class)
     val listFiles = documentFile.mapLatest { file ->
@@ -119,6 +153,9 @@ class GalleryViewModel(
             emptyList<DocumentFile>()
         } else {
             val listFiles = measureTimedValue {
+
+
+
                 val filteredFiles = file.listFiles().asSequence().filter {
                     it.isDirectory
                 }.map {
@@ -133,6 +170,8 @@ class GalleryViewModel(
                         fileToGalleryItemCacheV2[it]!!.value = it.toGalleryItem()
                     }
                 }
+
+                println(testListFiles)
 
                 filteredFiles
             }
