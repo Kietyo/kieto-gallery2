@@ -1,17 +1,20 @@
 package dev.kietyo.scrap.utils
 
+import android.content.ContentResolver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.ContentScale
 import androidx.documentfile.provider.DocumentFile
 import coil.request.ImageRequest
 import dev.kietyo.scrap.GalleryItem
 import dev.kietyo.scrap.di.MyApplication
+import dev.kietyo.scrap.viewmodels.KDocumentModel
 
 const val STRING_ACTIVITY_RESULT = "STRING_ACTIVITY_RESULT"
+const val IMAGE_JPEG_MIME_TYPE = "image/jpeg"
 
 val DocumentFile.isImage: Boolean
     get() {
-        return type == "image/jpeg"
+        return type == IMAGE_JPEG_MIME_TYPE
     }
 
 fun DocumentFile.toGalleryItem(): GalleryItem {
@@ -30,6 +33,27 @@ fun DocumentFile.toGalleryItem(): GalleryItem {
         )
     }
 }
+
+fun KDocumentModel.toGalleryItem(contentResolver: ContentResolver): GalleryItem {
+    val directory = this
+    require(directory.isDirectory)
+
+    val firstImageFileInDirectory = directory.listFiles(contentResolver).firstOrNull {
+        it.isImage
+    }
+    val firstImageV2 = directory.getFirstImageFileInDirectoryOrNull(contentResolver)
+    println(firstImageV2)
+    return if (firstImageFileInDirectory == null) {
+        GalleryItem.Folder(directory.name)
+    } else {
+        GalleryItem.FolderWithAsyncImage(
+            directory.name,
+            ImageRequest.Builder(MyApplication.getAppContext())
+                .data(firstImageFileInDirectory.uri).build()
+        )
+    }
+}
+
 
 interface DisplayTextI {
     val displayText: String

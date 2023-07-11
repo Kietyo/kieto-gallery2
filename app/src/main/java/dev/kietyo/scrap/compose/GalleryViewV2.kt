@@ -18,13 +18,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.documentfile.provider.DocumentFile
 import dev.kietyo.scrap.GalleryItem
 import dev.kietyo.scrap.R
 import dev.kietyo.scrap.log
 import dev.kietyo.scrap.viewmodels.GalleryViewModel
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.forEach
+import dev.kietyo.scrap.viewmodels.KDocumentModel
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @RequiresApi(Build.VERSION_CODES.N)
@@ -70,7 +68,7 @@ val exampleImages = listOf(
 @Composable
 fun GalleryItemWrapper(
     galleryViewModel: GalleryViewModel,
-    documentFile: DocumentFile,
+    documentFile: KDocumentModel,
     onImageClick: () -> Unit
 ) {
     val galleryItem = galleryViewModel.fileToGalleryItemCacheV2[documentFile]!!

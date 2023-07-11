@@ -8,14 +8,13 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.Build
 import android.provider.DocumentsContract
-import android.util.Log
+import android.provider.MediaStore
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
-import androidx.documentfile.provider.TreeDocumentFile
 import androidx.lifecycle.AndroidViewModel
 import dev.kietyo.scrap.GalleryItem
 import dev.kietyo.scrap.log
@@ -28,6 +27,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.mapLatest
@@ -38,7 +38,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import okhttp3.internal.closeQuietly
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import kotlin.math.max
@@ -54,6 +53,40 @@ data class GallerySettings(
     val contentScaleEnum: ContentScaleEnum,
     val alignmentEnum: AlignmentEnum
 )
+
+fun resolverQuery(resolver: ContentResolver, uri: Uri): List<KDocumentModel> {
+    val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
+        uri,
+        DocumentsContract.getDocumentId(uri)
+    )
+    val results = mutableListOf<KDocumentModel>()
+    var c: Cursor? = null
+    try {
+        c = resolver.query(
+            childrenUri, arrayOf(
+                DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                DocumentsContract.Document.COLUMN_MIME_TYPE,
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+            ), null, null, null
+        )
+        while (c!!.moveToNext()) {
+            val documentId = c.getString(0)
+            val mimeType = c.getString(1)
+            val columnDisplayName = c.getString(2)
+            val documentUri = DocumentsContract.buildDocumentUriUsingTree(
+                uri,
+                documentId
+            )
+            results.add(KDocumentModel(documentUri, mimeType, columnDisplayName))
+        }
+    } catch (e: Exception) {
+        log("Failed query: $e")
+    } finally {
+        c?.close()
+    }
+    return results
+}
+
 
 class GalleryViewModel(
     private val application: Application,
@@ -105,58 +138,21 @@ class GalleryViewModel(
         log("Received saved URI: ${_selectedFolder.value}")
     }
 
-    val fileToGalleryItemCacheV2 = ConcurrentHashMap<DocumentFile, MutableState<GalleryItem?>>()
+    val fileToGalleryItemCacheV2 = ConcurrentHashMap<KDocumentModel, MutableState<GalleryItem?>>()
     var loadImagesJob: Job? = null
 
-    fun DocumentFile.fastListFiles() {
-        val resolver: ContentResolver = contentResolver
-        val mUri = uri
-        val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
-            uri,
-            DocumentsContract.getDocumentId(uri)
-        )
-        val results = ArrayList<Uri>()
-
-        var c: Cursor? = null
-        try {
-            c = resolver.query(
-                childrenUri, arrayOf(
-                    DocumentsContract.Document.COLUMN_DOCUMENT_ID
-                ), null, null, null
-            )
-            while (c!!.moveToNext()) {
-                val documentId = c!!.getString(0)
-                val documentUri = DocumentsContract.buildDocumentUriUsingTree(
-                    mUri,
-                    documentId
-                )
-                results.add(documentUri)
-            }
-        } catch (e: Exception) {
-            log("Failed query: $e")
-        } finally {
-            c?.closeQuietly()
-        }
-
-        val result = results.toTypedArray()
-        val resultFiles = arrayOfNulls<DocumentFile>(result.size)
-        for (i in result.indices) {
-            resultFiles[i] = TreeDocumentFile(this, mContext, result[i])
-        }
-        return resultFiles
+    fun DocumentFile.fastListFiles(): List<KDocumentModel> {
+        return resolverQuery(contentResolver, uri)
     }
 
     @RequiresApi(Build.VERSION_CODES.N)
     @OptIn(ExperimentalTime::class, ExperimentalCoroutinesApi::class)
-    val listFiles = documentFile.mapLatest { file ->
+    val listFiles: Flow<List<KDocumentModel>> = documentFile.mapLatest { file ->
         if (file == null) {
-            emptyList<DocumentFile>()
+            emptyList()
         } else {
             val listFiles = measureTimedValue {
-
-
-
-                val filteredFiles = file.listFiles().asSequence().filter {
+                val filteredFiles = file.fastListFiles().filter {
                     it.isDirectory
                 }.map {
                     fileToGalleryItemCacheV2.computeIfAbsent(it) {
@@ -167,11 +163,9 @@ class GalleryViewModel(
 
                 loadImagesJob = ioScope.launch(dispatcher) {
                     filteredFiles.forEach {
-                        fileToGalleryItemCacheV2[it]!!.value = it.toGalleryItem()
+                        fileToGalleryItemCacheV2[it]!!.value = it.toGalleryItem(contentResolver)
                     }
                 }
-
-                println(testListFiles)
 
                 filteredFiles
             }
