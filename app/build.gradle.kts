@@ -38,7 +38,7 @@ android {
         viewBinding = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.compose.get()
+        kotlinCompilerExtensionVersion = "1.4.6"
     }
     packagingOptions {
         resources {
@@ -53,10 +53,10 @@ kapt {
 }
 
 dependencies {
-    implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-    implementation("androidx.navigation:navigation-fragment-ktx:2.4.1")
-    implementation("androidx.navigation:navigation-ui-ktx:2.4.1")
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.navigation.fragment.ktx)
+    implementation(libs.compose.navigation.ui.ktx)
     val platform = platform(libs.bom.compose)
     implementation(platform)
     androidTestImplementation(platform)
@@ -70,6 +70,7 @@ dependencies {
     implementation(libs.compose.navigation.core)
     implementation(libs.compose.navigation.hilt)
     implementation(libs.compose.activity)
+    implementation(libs.compose.lifecycle.viewmodel)
     implementation(libs.coil)
     implementation(libs.coil.compose)
 

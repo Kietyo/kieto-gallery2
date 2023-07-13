@@ -1,43 +1,55 @@
 [versions]
-bomCompose = "2023.03.00"
+activity = "1.7.2"
+appcompat = "1.6.1"
+bomCompose = "2023.06.01"
 compose = "1.4.4"
-composeNavigation = "2.5.3"
+composeNavigation = "2.6.0"
 composeNavigationHilt = "1.0.0"
-composeTest = "1.4.0"
-activity = "1.9.0"
+composeTest = "1.4.3"
+coreKtx = "1.10.1"
+activityCompose = "1.7.2"
+constraintlayout = "2.1.4"
 kotlin = "1.8.10"
 hilt = "2.45"
 androidGradlePlugin = "8.0.2"
 coil = "2.3.0"
 kotlinx-serialization-version = "1.8.10"
-kotlinx-serialization-json = "1.5.0"
+kotlinx-serialization-json = "1.5.1"
+navigationFragmentKtx = "2.6.0"
+lifecycleViewmodelCompose = "2.6.1"
 
 [libraries]
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
+androidx-navigation-fragment-ktx = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "navigationFragmentKtx" }
 bom-compose = { group = "androidx.compose", name = "compose-bom", version.ref = "bomCompose" }
 
-androidx-core = { module = "androidx.core:core-ktx", version.ref = "activity" }
+androidx-activity-ktx = { module = "androidx.activity:activity-ktx", version.ref = "activity" }
+androidx-core = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 androidx-junit = { module = "androidx.test.ext:junit", version = "1.1.5" }
-androidx-material = { module = "com.google.android.material:material", version = "1.8.0" }
+androidx-material = { module = "com.google.android.material:material", version = "1.9.0" }
 
-compose-activity = { group = "androidx.activity", name = "activity-compose" }
+compose-activity = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose"}
+compose-lifecycle-viewmodel = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelCompose"}
 compose-material = { group = "androidx.compose.material", name = "material" }
 compose-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 compose-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 compose-ui = { group = "androidx.compose.ui", name = "ui" }
 
 compose-navigation-core = { module = "androidx.navigation:navigation-compose", version.ref = "composeNavigation" }
+compose-navigation-ui-ktx = { module = "androidx.navigation:navigation-ui-ktx", version.ref = "composeNavigation" }
 compose-navigation-hilt = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "composeNavigationHilt" }
 
 compose-test-uiJunit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "composeTest" }
 compose-test-uiManifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "composeTest" }
 
 coil = { module = "io.coil-kt:coil", version.ref = "coil"}
-coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil"}
+coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
 
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-core = { module = "com.google.dagger:hilt-core", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
-hilt-androidCompiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
+hilt-androidCompiler = { module = "com.google.dagger:hilt-android-compiler", version = "2.46.1" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization-json" }
 
 [plugins]

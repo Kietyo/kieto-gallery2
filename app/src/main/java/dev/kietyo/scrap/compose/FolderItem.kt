@@ -46,11 +46,3 @@ fun FolderItem(item: GalleryItem.Folder, onImageClick: () -> Unit) {
     }
 }
 
-@Composable
-fun FolderItemV2(item: GalleryItem.Folder, onImageClick: () -> Unit) {
-    FolderItemWithAsyncImageTemplate(
-        FolderItemData.NoImage,
-        item.folderName,
-        onImageClick
-    )
-}

@@ -49,7 +49,6 @@ fun GalleryViewV2(
             }
             .fillMaxSize()
     ) {
-
         log("LazyVerticalGrid: gridSize: ${gridSize}")
         files.value.forEach { documentFile ->
             item {

@@ -8,7 +8,6 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.Build
 import android.provider.DocumentsContract
-import android.provider.MediaStore
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -35,7 +34,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap

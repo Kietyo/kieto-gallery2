@@ -12,37 +12,12 @@ import dev.kietyo.scrap.viewmodels.KDocumentModel
 const val STRING_ACTIVITY_RESULT = "STRING_ACTIVITY_RESULT"
 const val IMAGE_JPEG_MIME_TYPE = "image/jpeg"
 
-val DocumentFile.isImage: Boolean
-    get() {
-        return type == IMAGE_JPEG_MIME_TYPE
-    }
-
-fun DocumentFile.toGalleryItem(): GalleryItem {
-    val directory = this
-    require(directory.isDirectory)
-    val firstImageFileInDirectory = directory.listFiles().firstOrNull {
-        it.isImage
-    }
-    return if (firstImageFileInDirectory == null) {
-        GalleryItem.Folder(directory.name!!)
-    } else {
-        GalleryItem.FolderWithAsyncImage(
-            directory.name!!,
-            ImageRequest.Builder(MyApplication.getAppContext())
-                .data(firstImageFileInDirectory.uri).build()
-        )
-    }
-}
-
 fun KDocumentModel.toGalleryItem(contentResolver: ContentResolver): GalleryItem {
     val directory = this
     require(directory.isDirectory)
 
-    val firstImageFileInDirectory = directory.listFiles(contentResolver).firstOrNull {
-        it.isImage
-    }
-    val firstImageV2 = directory.getFirstImageFileInDirectoryOrNull(contentResolver)
-    println(firstImageV2)
+    val firstImageFileInDirectory = directory.getFirstImageFileInDirectoryOrNull(contentResolver)
+    println(firstImageFileInDirectory)
     return if (firstImageFileInDirectory == null) {
         GalleryItem.Folder(directory.name)
     } else {

@@ -16,10 +16,6 @@ data class KDocumentModel(
     val isImage get() = mimeType == IMAGE_JPEG_MIME_TYPE
     val isDirectory get() = mimeType == DocumentsContract.Document.MIME_TYPE_DIR
 
-    fun listFiles(contentResolver: ContentResolver): List<KDocumentModel> {
-        return resolverQuery(contentResolver, uri)
-    }
-
     fun getFirstImageFileInDirectoryOrNull(contentResolver: ContentResolver): KDocumentModel? {
         val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
             uri,

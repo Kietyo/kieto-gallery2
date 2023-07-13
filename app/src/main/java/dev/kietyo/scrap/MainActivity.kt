@@ -33,7 +33,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import dev.kietyo.scrap.compose.FolderItem
-import dev.kietyo.scrap.compose.GalleryView
+import dev.kietyo.scrap.compose.GalleryViewMain
 import dev.kietyo.scrap.utils.NavDestinations
 import dev.kietyo.scrap.utils.STRING_ACTIVITY_RESULT
 import dev.kietyo.scrap.utils.SharedPreferencesDbs
@@ -101,7 +101,7 @@ fun MainScreen(galleryViewModel: GalleryViewModel) {
     NavHost(navController = navController, startDestination = NavDestinations.GALLERY) {
         log("navController.currentDestination: ${navController.currentDestination}")
         composable(NavDestinations.GALLERY) {
-            GalleryView(galleryViewModel) {
+            GalleryViewMain(galleryViewModel) {
                 log("Navigating the image destination...")
                 galleryViewModel.loadImagesJob?.cancel()
                 log("Load images job cancelled...")

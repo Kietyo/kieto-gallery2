@@ -7,7 +7,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import dev.kietyo.scrap.ui.theme.AndroidComposeTemplateTheme
 import dev.kietyo.scrap.viewmodels.GalleryViewModel
 import kotlin.time.ExperimentalTime
@@ -15,7 +14,7 @@ import kotlin.time.ExperimentalTime
 @OptIn(ExperimentalTime::class)
 @RequiresApi(Build.VERSION_CODES.P)
 @Composable
-fun GalleryView(
+fun GalleryViewMain(
     galleryViewModel: GalleryViewModel,
     onImageClick: () -> Unit
 ) {
@@ -30,7 +29,7 @@ fun GalleryView(
     AndroidComposeTemplateTheme {
         Column {
             ExpandableHeader(galleryViewModel, openFolderLauncher)
-                GalleryViewV2(galleryViewModel, onImageClick)
+            GalleryViewV2(galleryViewModel, onImageClick)
         }
     }
 }
