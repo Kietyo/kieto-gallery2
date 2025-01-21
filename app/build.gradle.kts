@@ -56,6 +56,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.navigation.fragment.ktx)
+    implementation(libs.androidx.activity.ktx)
     implementation(libs.compose.navigation.ui.ktx)
     val platform = platform(libs.bom.compose)
     implementation(platform)
@@ -65,7 +66,7 @@ dependencies {
     implementation(libs.androidx.material)
 
     implementation(libs.compose.ui)
-    implementation(libs.compose.material)
+    implementation(libs.compose.material)fs
     implementation(libs.compose.preview)
     implementation(libs.compose.navigation.core)
     implementation(libs.compose.navigation.hilt)
